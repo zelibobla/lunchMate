@@ -1,5 +1,5 @@
 const https = require('https');
-const config = require('./config');
+const config = require('../configs/config.js');
 
 module.exports = {
   send(method, params) {

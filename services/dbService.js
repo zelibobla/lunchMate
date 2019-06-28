@@ -31,5 +31,19 @@ module.exports = {
         return resolve({ ...result.Attributes, ...params.Item });
       });
     });
+  },
+  delete(ID, table) {
+    return new Promise((resolve, reject) => {
+      if (typeof ID !== 'number') throw `the id must be a number and not ${ID}`;
+      if (!table) throw 'table name is needed';
+      let params = { TableName: table, Item: { ...data, id: ID } };
+      documentClient.delete(params, function(err, result) {
+        if (err) {
+          console.log("Err in writeForCall writing messages to dynamo:", err);
+          return reject(err);
+        }
+        return resolve({ ...result.Attributes, ...params.Item });
+      });
+    });
   }
 }

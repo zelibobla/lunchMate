@@ -1,18 +1,17 @@
-const db = require('./db');
-const telegram = require('./telegram');
+const actions = {
+  '/start': require('./actions/startAction.js'),
+  '/help': require('./actions/helpAction.js'),
+  '/undefined': require('./actions/undefinedAction.js')
+};
 
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
   const data = JSON.parse(event.body);
-  const userId = data.message.chat.id;
-  const name = data.message.chat.first_name;
-  const chatId = data.message.chat.id;
-  try {
-    await db.upsert(userId, { first_name: name, chat_id: chatId }, 'users');
-    await telegram.send('sendMessage', { chat_id: chatId, text: name });
-    return { statusCode: 200 };
-  } catch(error) {
-    console.log(error);
-    return { statusCode: 500 };
+  let action = data.message.text;
+  if (!actions.hasOwnProperty(action)){
+    action = '/undefined';
   }
+  console.log('Action defined:', action);
+  const response = await actions[action](data);
+  return response;
 };
