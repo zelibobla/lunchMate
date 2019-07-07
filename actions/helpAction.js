@@ -3,11 +3,5 @@ const messages = require('../configs/messages.js');
 
 module.exports = async (data) => {
   const chatId = data.message.chat.id;
-  try {
-    await telegram.send('sendMessage', { chat_id: chatId, text: messages.help });
-    return { statusCode: 200 };
-  } catch(error) {
-    console.log(error);
-    return { statusCode: 500 };
-  }
+  await telegram.send('sendMessage', { chat_id: chatId, text: messages.help });
 }

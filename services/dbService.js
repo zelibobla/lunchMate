@@ -17,12 +17,30 @@ module.exports = {
       });
     })
   },
-  upsert(ID, data, table) {
+
+  getAll(params, table) {
+    if (!table) throw 'table needed';
+    if (!params || typeof params.filterExpression === 'undefined' || params.expressionAttributes === 'undefined') {
+      throw `params ${JSON.stringify(params)} are invalid`;
+    }
+    params.TableName = table;
     return new Promise((resolve, reject) => {
-      if (typeof ID !== 'number') throw `the id must be a number and not ${ID}`;
+      documentClient.scan(params, function(err, data) {
+        if (err) {
+          console.log(`There was an error scanning the table ${table} with params ${JSON.stringify(params)}`, err);
+          return reject(err);
+        }
+        return resolve(data.Items);
+      });
+    });
+  },
+
+  upsert(username, data, table) {
+    return new Promise((resolve, reject) => {
+      if (typeof username !== 'string') throw `the id must be a string and not ${username}`;
       if (!data) throw "data is needed";
       if (!table) throw 'table name is needed';
-      let params = { TableName: table, Item: { ...data, id: ID } };
+      let params = { TableName: table, Item: { ...data, id: username } };
       documentClient.put(params, function(err, result) {
         if (err) {
           console.log("Err in writeForCall writing messages to dynamo:", err);
@@ -32,11 +50,12 @@ module.exports = {
       });
     });
   },
-  delete(ID, table) {
+
+  delete(username, table) {
     return new Promise((resolve, reject) => {
-      if (typeof ID !== 'number') throw `the id must be a number and not ${ID}`;
+      if (typeof username !== 'number') throw `the id must be a number and not ${username}`;
       if (!table) throw 'table name is needed';
-      let params = { TableName: table, Item: { ...data, id: ID } };
+      let params = { TableName: table, Item: { ...data, id: username } };
       documentClient.delete(params, function(err, result) {
         if (err) {
           console.log("Err in writeForCall writing messages to dynamo:", err);

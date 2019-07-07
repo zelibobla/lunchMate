@@ -3,24 +3,33 @@ const telegram = require('../services/telegramService.js');
 const messages = require('../configs/messages.js');
 
 module.exports = async (data) => {
-  const userId = data.message.chat.id;
-  const name = data.message.chat.first_name;
   const chatId = data.message.chat.id;
-  try {
-    await db.upsert(userId, { first_name: name, chat_id: chatId }, 'users');
+  const { is_bot, first_name, username } = data.message.from;
+  if (is_bot) {
     await telegram.send('sendMessage', {
       chat_id: chatId,
-      text: messages.start(name),
-      reply_markup: { inline_keyboard: [
-        [
-          { text: 'yes', callback_data: '/create_list' },
-          { text: 'no', callback_data: '/dont_create_list' },
-        ]
-      ]},
+      text: messages.startFromBot(first_name),
     });
-    return { statusCode: 200 };
-  } catch(error) {
-    console.log(error);
-    return { statusCode: 500 };
+    return;
   }
+  if (!username) {
+    await telegram.send('sendMessage', {
+      chat_id: chatId,
+      text: messages.usernameUndefined(first_name),
+    });
+    return;
+  }
+  const user = data.message.from;
+  user.chat_id = chatId;
+  await db.upsert(username, user, 'users');
+  await telegram.send('sendMessage', {
+    chat_id: chatId,
+    text: messages.start(username),
+    reply_markup: { inline_keyboard: [
+      [
+        { text: 'yes', callback_data: '/create_list' },
+        { text: 'no', callback_data: '/dont_create_list' },
+      ]
+    ]},
+  });
 }
