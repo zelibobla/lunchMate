@@ -15,6 +15,9 @@ module.exports = {
       const url = `${config.telegram.url}/${method}?${queryParams}`;
       console.log('Telegram url requested:', url);
       https.get(url, function(result) {
+        if (result.statusCode !== 200) {
+          return reject(result);
+        }
         return resolve(result);
       }).on('error', function(error) {
         return reject(error);

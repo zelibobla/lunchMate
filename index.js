@@ -7,7 +7,7 @@ exports.handler = async (event) => {
     await action(data);
     return { statusCode: 200 };
   } catch (error) {
-    console.log(error);
+    console.log('Exception catched:', error);
     return { statusCode: 200 };
   }
 };

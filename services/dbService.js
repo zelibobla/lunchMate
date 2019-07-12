@@ -53,9 +53,9 @@ module.exports = {
 
   delete(username, table) {
     return new Promise((resolve, reject) => {
-      if (typeof username !== 'number') throw `the id must be a number and not ${username}`;
+      if (typeof username !== 'string') throw `the id must be a string and not ${username}`;
       if (!table) throw 'table name is needed';
-      let params = { TableName: table, Item: { ...data, id: username } };
+      let params = { TableName: table, Key: { username } };
       documentClient.delete(params, function(err, result) {
         if (err) {
           console.log("Err in writeForCall writing messages to dynamo:", err);
