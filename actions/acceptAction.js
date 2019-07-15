@@ -36,12 +36,12 @@ module.exports = async (data) => {
   mate.is_accepted = true;
   invitation.is_active = false;
   await Promise.all([
-    await db.upsert(user.username, user, 'users'),
-    await telegram.send('sendMessage', {
+    db.upsert(user.username, user, 'users'),
+    telegram.send('sendMessage', {
       chat_id: chatId,
       text: messages.youAccepted(user.username, foundMate.username),
     }),
-    await telegram.send('sendMessage', {
+    telegram.send('sendMessage', {
       chat_id: chatId,
       text: messages.yourInvitationAccepted(user.username, foundMate.username),
     }),

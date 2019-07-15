@@ -36,8 +36,8 @@ module.exports = async (data) => {
   }
   mate.is_declined = true;
   await Promise.all([
-    await db.upsert(user.username, user, 'users'),
-    await telegram.send('sendMessage', {
+    db.upsert(user.username, user, 'users'),
+    telegram.send('sendMessage', {
       chat_id: chatId,
       text: messages.youDeclined(user.username, foundMate.username),
     }),
