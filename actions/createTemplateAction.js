@@ -1,20 +1,18 @@
 const config = require('../configs/config.js');
 const db = require('../services/dbService.js');
-const telegram = require('../services/telegramService.js');
+const chat = require('../services/chatService.js');
 const messages = require('../configs/messages.js');
 
 module.exports = async (data) => {
-  const chatId = data.message.chat.id;
   const username = data.message.from.username;
   const user = await db.get('username', username, 'users');
   if (!user) {
-    await telegram.send('sendMessage', { chat_id: chatId, text: messages.registerFirst(username)});
-    return;
+    return await chat.sendMessage(messages.registerFirst(username));
   }
   if (!data.query_params ||
     !data.query_params[0] ||
     !data.query_params[1]) {
-    await telegram.send('sendMessage', { chat_id: chatId, text: messages.invalidTemplate });
+    await chat.sendMessage(messages.invalidTemplate);
     return;
   }
   if (!user.templates) {
@@ -30,9 +28,6 @@ module.exports = async (data) => {
   user.templates.push(template);
   await Promise.all([
     db.upsert(username, user, 'users'),
-    telegram.send('sendMessage', {
-      chat_id: chatId,
-      text: messages.templateCreated(template),
-    }),
+    chat.sendMessage(messages.templateCreated(template)),
   ]);
 }

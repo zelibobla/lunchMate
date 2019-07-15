@@ -5,6 +5,7 @@ const toString = (value) => {
   const result = typeof value !== 'object' ? value + '' : JSON.stringify(value);
   return encodeURIComponent(result);
 }
+
 module.exports = {
   send(method, params) {
     const queryParams = Object.keys(params).reduce(

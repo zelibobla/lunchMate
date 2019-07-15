@@ -1,9 +1,11 @@
+const chat = require('./chatService.js');
 const actions = {
   '/accept': require('../actions/acceptAction.js'),
   '/add': require('../actions/addAction.js'),
   '/create_template': require('../actions/createTemplateAction.js'),
   '/create_list': require('../actions/createListAction.js'),
   '/decline': require('../actions/declineAction.js'),
+  '/delete_template': require('../actions/deleteTemplateAction.js'),
   '/dont_create_list': require('../actions/dontCreateListAction.js'),
   '/help': require('../actions/helpAction.js'),
   '/processInvitations': require('../actions/processInvitationsAction.js'),
@@ -37,15 +39,18 @@ module.exports = {
         const parts = rawData.callback_query.data.split('?');
         actionName = parts[0];
         data = rawData.callback_query;
-        data.query_params = parts[1].split('&').reduce((memo, element) => {
-          const [paramName, paramValue] = element.split('=');
-          memo[paramName] = paramValue;
-          return memo;
-        }, {});
+        if (parts[1]) {
+          data.query_params = parts[1].split('&').reduce((memo, element) => {
+            const [paramName, paramValue] = element.split('=');
+            memo[paramName] = paramValue;
+            return memo;
+          }, {});
+        }
         if (!actions.hasOwnProperty(actionName)) {
           actionName = '/undefined';
         }
       }
+      chat.setId(data.message.chat.id);
     } else if (event.resources && event.resources[0] && event.resources[0].indexOf('regular_check') !== -1) {
       actionName = '/processInvitations';
     }

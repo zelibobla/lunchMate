@@ -1,33 +1,27 @@
 const db = require('../services/dbService.js');
-const telegram = require('../services/telegramService.js');
+const chat = require('../services/chatService.js');
 const messages = require('../configs/messages.js');
 const createTemplateAction = require('./createTemplateAction.js');
 const processInvitationsAction = require('./processInvitationsAction.js');
 
 module.exports = async (data) => {
-  console.log('>>>', data);
-  const chatId = data.message.chat.id;
   const { username } = data.from ? data.from : data.message.from;
   const user = await db.get('username', username, 'users');
   if (!user) {
-    await telegram.send('sendMessage', { chat_id: chatId, text: messages.registerFirst(username)});
-    return;
+    return await chat.sendMessage(messages.registerFirst(username));
   }
   if (!user.list) {
-    await telegram.send('sendMessage', { chat_id: chatId, text: messages.emptyList(username)});
-    return;
+    return await chat.sendMessage(messages.emptyList(username));
   }
   const activeInvitation = await db.get('username', username, 'invitations');
   if (activeInvitation) {
-    await telegram.send('sendMessage', { chat_id: chatId, text: messages.alreadyRunning });
-    return;
+    return await chat.sendMessage(messages.alreadyRunning);
   }
   if (!user.templates || !user.templates.length) {
-    await Promise.all([
-      telegram.send('sendMessage', { chat_id: chatId, text: messages.noTemplates }),
+    return await Promise.all([
+      chat.sendMessage(messages.noTemplates),
       createTemplateAction(data),
     ]);
-    return;
   }
   let templateIndex;
   if (user.templates.length === 1){
@@ -38,13 +32,11 @@ module.exports = async (data) => {
     const templatesOptions = user.templates.map((t, index) => ([{
       text: messages.templateBrief(t),
       callback_data: `/run?template_index=${index}`,
+    }, {
+      text: 'x',
+      callback_data: `/delete_template?template_index=${index}`
     }]));
-    await telegram.send('sendMessage', {
-      chat_id: chatId,
-      text: messages.chooseTemplate,
-      reply_markup: { inline_keyboard: templatesOptions }
-    });
-    return;
+    return await chat.sendMessage(messages.chooseTemplate, { inline_keyboard: templatesOptions });
   }
   const template = user.templates[templateIndex];
   if (!user.invitations) {
@@ -63,6 +55,6 @@ module.exports = async (data) => {
     db.upsert(username, { username }, 'invitations'),
     db.upsert(username, user, 'users'),
   ]);
-  await telegram.send('sendMessage', { chat_id: chatId, text: messages.run(username, invitation)});
+  await chat.sendMessage(messages.run(username, invitation));
   await processInvitationsAction();
 }

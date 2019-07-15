@@ -1,12 +1,11 @@
 const db = require('../services/dbService.js');
-const telegram = require('../services/telegramService.js');
+const chat = require('../services/chatService.js');
 const messages = require('../configs/messages.js');
 
 module.exports = async (data) => {
-  const userId = data.message.chat.id;
+  const { username } = data.message.from;
   const name = data.message.chat.first_name;
-  const chatId = data.message.chat.id;
-  await db.delete(userId, 'users');
-  await telegram.send('sendMessage', { chat_id: chatId, text: messages.delete(name) });
+  await db.delete(username, 'users');
+  await chat.sendMessage(messages.delete(name));
   return { statusCode: 200 };
 }
