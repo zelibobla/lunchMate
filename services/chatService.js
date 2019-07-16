@@ -1,10 +1,18 @@
 const telegram = require('./telegramService.js');
 
 module.exports = {
-  setId(newChatId) {
+  setId: (newChatId) => {
     this.chatId = newChatId;
   },
-  async sendMessage(text, reply_markup) {
+  defineChatId: (data) => {
+    try {
+      this.chatId = data.message.chat.id;
+    } catch(error) {
+      console.warn(`Was unable to define chatId from ${data}`);
+    }
+    return data;
+  },
+  sendMessage: async (text, reply_markup) => {
     if (!this.chatId) {
       throw `chatId is not defined; use telegramService.setChatId(Number) first`;
     }

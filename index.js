@@ -1,10 +1,10 @@
 const router = require('./services/routerService.js');
-
+const dispatch = require('./services/dispatchService.js');
 exports.handler = async (event) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
-  const { action, data } = router.detectAction(event);
   try {
-    await action(data);
+    const { route, data } = router.parseRouteAndData(event);
+    await dispatch(route, data);
     return { statusCode: 200 };
   } catch (error) {
     console.log('Exception catched:', error);
