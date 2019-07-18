@@ -1,6 +1,6 @@
 start - register with bot and set up basic settings
 create_template - setup the template of a roundabout message
-add - add specified user into the roundabout list
+create_list - add users into the roundabout list
 run - broadcast the invitation to the lunch
 stop - immediately stop roundabout polling
 help - see the list of possible commands

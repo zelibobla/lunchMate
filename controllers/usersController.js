@@ -1,5 +1,5 @@
 const db = require('../services/dbService.js');
-const chat = require('../services/chatService.js');
+const chat = require('../middlewares/chatMiddleware.js');
 const messages = require('../configs/messages.js');
 
 module.exports = {

@@ -1,14 +1,11 @@
-const telegram = require('./telegramService.js');
+const telegram = require('../services/telegramService.js');
 
 module.exports = {
-  setId: (newChatId) => {
-    this.chatId = newChatId;
-  },
   defineChatId: (data) => {
     try {
       this.chatId = data.message.chat.id;
     } catch(error) {
-      console.warn(`Was unable to define chatId from ${data}`);
+      console.warn(`Was unable to define chatId from ${JSON.stringify(data)}`);
     }
     return data;
   },

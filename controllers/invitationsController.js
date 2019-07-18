@@ -1,5 +1,6 @@
 const db = require('../services/dbService.js');
-const chat = require('../services/chatService.js');
+const chat = require('../middlewares/chatMiddleware.js');
+const telegram = require('../services/telegramService.js');
 const messages = require('../configs/messages.js');
 
 const processInvitation = async function(row) {
@@ -29,13 +30,15 @@ const processInvitation = async function(row) {
       return await processInvitation(row);
     }
   }
-  await chat.sendMessage(messages.invitePending(mate.username, user.username, invitation),
-    { inline_keyboard: [
+  await telegram.send('sendMessage', {
+    chat_id: mate.chat_id,
+    text: messages.invitePending(user.username, mate.username, invitation),
+    reply_markup: { inline_keyboard: [
       [
         { text: 'yes', callback_data: `/accept?username=${user.username}` },
         { text: 'no', callback_data: `/decline?username=${user.username}` },
       ]
-    ]});
+    ]}});
   mate.asked_at = +(new Date());
   await db.upsert(row.username, user, 'users');
 }
@@ -139,7 +142,7 @@ module.exports = {
         const { username } = data.from ? data.from : data.message.from;
         const user = await db.get('username', username, 'users');
         if (!user) {
-          return await chat.sendMessage(messages.registerFirst(username));
+          return await chat.sendMessage(messages.registerFirst);
         }
         if (!user.list) {
           return await chat.sendMessage(messages.emptyList(username));

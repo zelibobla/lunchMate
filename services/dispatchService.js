@@ -5,7 +5,7 @@ const dispatch = async(route, data) => {
   }
   const pipe = routesMap[route];
   let prevResult = data;
-  for(const act of pipe){
+  for(const act of pipe) {
     prevResult = await act(prevResult, dispatch);
   }
 };

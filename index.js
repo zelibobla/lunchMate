@@ -3,7 +3,7 @@ const dispatch = require('./services/dispatchService.js');
 exports.handler = async (event) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
   try {
-    const { route, data } = router.parseRouteAndData(event);
+    const { route, data } = await router.parseRouteAndData(event);
     await dispatch(route, data);
     return { statusCode: 200 };
   } catch (error) {
