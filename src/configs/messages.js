@@ -29,6 +29,7 @@ module.exports = {
   typeMeetPlace: `Where do you going to meet a mate before going together?`,
   typeDelay: `How many minutes mate has to reach the meeting place?`,
   typeTimeout: `How many minutes the invitation waiting before considered as declined?`,
+  invalidQueryParams: queryParams => `Provided query params are invalid ${JSON.stringify(queryParams)}`,
   invitationNotFound: `You reacted on the invitation, but it's already outdated, sorry. ` +
     `Reaction ignored`,
   listNotFound: name => `You reacted on the invitation, but you're not in the list of ${name}. ` +

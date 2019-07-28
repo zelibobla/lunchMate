@@ -1,0 +1,31 @@
+{
+  "name": "lunch_mate",
+  "version": "1.0.0",
+  "description": "The telegram bot for calling mates to the lunch",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd ./src && find . | egrep '\\.(js)$' | zip -@ botServer && aws lambda update-function-code --function-name botServer --zip-file fileb://botServer.zip && rm botServer.zip && cd ..",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zelibobla/lunchMate.git"
+  },
+  "keywords": [
+    "bot",
+    "telegram",
+    "lunch"
+  ],
+  "author": "Anton Zelenskii",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zelibobla/lunchMate/issues"
+  },
+  "homepage": "https://github.com/zelibobla/lunchMate#readme",
+  "dependencies": {
+    "aws-sdk": "^2.496.0"
+  },
+  "devDependencies": {
+    "jest": "^24.8.0"
+  }
+}

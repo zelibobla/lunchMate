@@ -37,9 +37,9 @@ module.exports = {
 
   upsert(username, data, table) {
     return new Promise((resolve, reject) => {
-      if (typeof username !== 'string') throw `the id must be a string and not ${username}`;
-      if (!data) throw "data is needed";
-      if (!table) throw 'table name is needed';
+      if (typeof username !== 'string') return reject(`the id must be a string and not ${username}`);
+      if (!data) return reject('data is needed');
+      if (!table) return reject('table name is needed');
       let params = { TableName: table, Item: { ...data, id: username } };
       documentClient.put(params, function(err, result) {
         if (err) {

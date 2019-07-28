@@ -16,12 +16,14 @@ const processInvitation = async function(row) {
     return await Promise.all([
       db.delete(row.username, 'invitations'),
       db.upsert(row.username, user, 'users'),
-      chat.sendMessage(messages.listEnded(user.username)),
+      telegram.send('sendMessage', {
+        chat_id: user.chat_id,
+        text: messages.listEnded(user.username),
+      }),
     ]);
   }
   if (mate.asked_at) {
-    const mSecInMinute = 60000;
-    const timeout = Math.floor((+(new Date()) - mate.asked_at) / mSecInMinute);
+    const timeout = Math.floor((+(new Date()) - mate.asked_at) / 60000 );
     if (timeout < invitation.timeout) {
       return;
     } else {
@@ -58,11 +60,11 @@ module.exports = {
         if (!data.query_params ||
           !data.query_params.username) {
             /** @TODO warn data inconsistency here */
-          return await chat.sendMessage(messages.mateNotFound(username));
+          return await chat.sendMessage(messages.invalidQueryParams(data.query_params));
         }
         const user = await db.get('username', data.query_params.username, 'users');
         if (!user) {
-          return await chat.sendMessage(messages.mateNotFound(username));
+          return await chat.sendMessage(messages.mateNotFound(data.query_params.username));
         }
         const invitation = user.invitations.find(i => i.is_active);
         if (!invitation) {
@@ -80,7 +82,10 @@ module.exports = {
         await Promise.all([
           db.upsert(user.username, user, 'users'),
           chat.sendMessage(messages.youAccepted(user.username, foundMate.username)),
-          chat.sendMessage(messages.yourInvitationAccepted(user.username, foundMate.username)),
+          telegram.send('sendMessage', {
+            chat_id: user.chat_id,
+            text: messages.yourInvitationAccepted(user.username, foundMate.username),
+          }),
         ]);
       },
     ],
@@ -113,7 +118,7 @@ module.exports = {
           ]);
         }
         const mate = invitation.list.find(m => m.username === foundMate.username);
-        if (!mate || mate.is_declined) {
+        if (!mate || mate.is_accepted) {
           return await chat.sendMessage(messages.listNotFound(user.username));
         }
         mate.is_declined = true;

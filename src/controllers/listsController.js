@@ -24,7 +24,7 @@ module.exports = {
       chatMiddleware.defineChatId,
       userMiddleware.defineUser,
       async (data) => {
-        const searchedMateUsername = data.message.text.replace(/^@/, '');
+        const searchedMateUsername = data.message.text.replace(/^@/, '').toLowerCase();
         const foundMate = await db.get('username', searchedMateUsername, 'users');
         if (!foundMate) {
           return await chatMiddleware.sendMessage(messages.mateNotFound(searchedMateUsername));
@@ -36,7 +36,7 @@ module.exports = {
           data.user.list = [];
         }
         if (!data.user.list.find(u => u.username === foundMate.username)) {
-          data.user.list.push(foundMate);
+          data.user.list.push({ username: foundMate.username, chat_id: foundMate.chat_id });
           await db.upsert(data.user.username, data.user, 'users');
         }
         await chatMiddleware.sendMessage(messages.added(foundMate.username, data.user.list));
