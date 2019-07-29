@@ -115,7 +115,7 @@ module.exports = {
         }
         let template = data.user.templates.find(t => t.is_creating);
         if (!template) {
-          template = { is_creating: true };
+          template = { is_creating: false };
           data.user.templates.push(template);
         }
         template.timeout = data.message.text;
@@ -131,21 +131,20 @@ module.exports = {
     route: '/delete_template',
     pipe: [
       chatMiddleware.defineChatId,
+      userMiddleware.defineUser,
       async (data) => {
-        const { username } = data.from ? data.from : data.message.from;
-        const user = await db.get('username', username, 'users');
-        if (!user) {
+        if (!data.user) {
           return await chatMiddleware.sendMessage(messages.registerFirst);
         }
         if (!data.query_params ||
           !data.query_params.template_index ||
-          !user.templates ||
-          !user.templates[data.query_params.template_index]) {
+          !data.user.templates ||
+          !data.user.templates[data.query_params.template_index]) {
           return await chatMiddleware.sendMessage(messages.templateNotFound);
         }
-        const [ template ] = user.templates.splice(data.query_params.template_index, 1);
+        const [ template ] = data.user.templates.splice(data.query_params.template_index, 1);
         await Promise.all([
-          db.upsert(username, user, 'users'),
+          db.upsert(data.user.username, data.user, 'users'),
           chatMiddleware.sendMessage(messages.templateDeleted(template)),
         ]);
         delete data.query_params.template_index;

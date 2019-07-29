@@ -1,5 +1,6 @@
 const db = require('../services/dbService.js');
 const chat = require('../middlewares/chatMiddleware.js');
+const userMiddleware = require('../middlewares/userMiddleware.js');
 const telegram = require('../services/telegramService.js');
 const messages = require('../configs/messages.js');
 
@@ -143,12 +144,13 @@ module.exports = {
     route: '/run',
     pipe: [
       chat.defineChatId,
+      userMiddleware.defineUser,
       async (data, redispatch) => {
-        const { username } = data.from ? data.from : data.message.from;
-        const user = await db.get('username', username, 'users');
-        if (!user) {
+        if (!data.user) {
           return await chat.sendMessage(messages.registerFirst);
         }
+        const { user } = data;
+        const { username } = user;
         if (!user.list) {
           return await chat.sendMessage(messages.emptyList(username));
         }
@@ -162,7 +164,7 @@ module.exports = {
           ]);
         }
         let templateIndex;
-        if (user.templates.length === 1){
+        if (data.user.templates.length === 1){
           templateIndex = 0;
         } else if (data.query_params && data.query_params.template_index) {
           templateIndex = user.templates[data.query_params.template_index] ? data.query_params.template_index : 0;
