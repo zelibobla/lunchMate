@@ -2,6 +2,7 @@ const controllers = [
   require('./basicsController.js'),
   require('./invitationsController.js'),
   require('./listsController.js'),
+  require('./matesController.js'),
   require('./templatesController.js'),
   require('./usersController.js'),
 ];

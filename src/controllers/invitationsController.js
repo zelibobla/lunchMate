@@ -11,7 +11,7 @@ const processInvitation = async function(row) {
     /** @TODO warn data inconsistency here */
     return await db.delete(row.username, 'invitations');
   }
-  const mate = invitation.list.find(m => !m.is_accepted && !m.is_declined);
+  const mate = invitation.list.mates.find(m => !m.is_accepted && !m.is_declined);
   if (!mate) {
     invitation.is_active = false;
     return await Promise.all([
@@ -74,7 +74,7 @@ module.exports = {
             db.delete(user.username, 'invitations'),
           ]);
         }
-        const mate = invitation.list.find(m => m.username === foundMate.username);
+        const mate = invitation.list.mates.find(m => m.username === foundMate.username);
         if (!mate || mate.is_declined) {
           return await chat.sendMessage(messages.listNotFound(user.username));
         }
@@ -118,7 +118,7 @@ module.exports = {
             db.delete(user.username, 'invitations'),
           ]);
         }
-        const mate = invitation.list.find(m => m.username === foundMate.username);
+        const mate = invitation.list.mates.find(m => m.username === foundMate.username);
         if (!mate || mate.is_accepted) {
           return await chat.sendMessage(messages.listNotFound(user.username));
         }
@@ -151,8 +151,21 @@ module.exports = {
         }
         const { user } = data;
         const { username } = user;
-        if (!user.list) {
+        if (!user.lists || !user.lists.length) {
           return await chat.sendMessage(messages.emptyList(username));
+        }
+        const query = data.query_params;
+        let listIndex;
+        if (data.user.lists.length === 1) {
+          listIndex = 0;
+        } else if (query && query.list_index) {
+          listIndex = user.lists[query.list_index] ? query.list_index : 0;
+        } else {
+          const listsOptions = user.lists.map((l, index) => ([{
+            text: l.name,
+            callback_data: `/run?list_index=${index}`,
+          }]));
+          return await chat.sendMessage(messages.chooseList, { inline_keyboard: listsOptions });
         }
         const activeInvitation = await db.get('username', username, 'invitations');
         if (activeInvitation) {
@@ -166,8 +179,8 @@ module.exports = {
         let templateIndex;
         if (data.user.templates.length === 1){
           templateIndex = 0;
-        } else if (data.query_params && data.query_params.template_index) {
-          templateIndex = user.templates[data.query_params.template_index] ? data.query_params.template_index : 0;
+        } else if (query && query.template_index) {
+          templateIndex = user.templates[query.template_index] ? query.template_index : 0;
         } else {
           const templatesOptions = user.templates.map((t, index) => ([{
             text: messages.templateBrief(t),
@@ -179,12 +192,13 @@ module.exports = {
           return await chat.sendMessage(messages.chooseTemplate, { inline_keyboard: templatesOptions });
         }
         const template = user.templates[templateIndex];
+        const list = user.lists[listIndex];
         if (!user.invitations) {
           user.invitations = [];
         }
         const invitation = {
           is_active: true,
-          list: user.list,
+          list,
           eat_place: template.eat_place,
           meet_place: template.meet_place,
           delay: template.delay,
@@ -195,6 +209,7 @@ module.exports = {
           db.upsert(username, { username }, 'invitations'),
           db.upsert(username, user, 'users'),
         ]);
+        console.log('>>>', invitation);
         await chat.sendMessage(messages.run(username, invitation));
         await redispatch('/process_invitations');
       }
@@ -214,14 +229,14 @@ module.exports = {
         if (!invitation) {
           return Promise.all([
             chat.sendMessage(messages.nothingToStop),
-            db.delete(row.username, 'invitations'),
+            db.delete(user.username, 'invitations'),
           ]);
         }
         invitation.is_active = false;
         await Promise.all([
           db.delete(user.username, 'invitations'),
           db.upsert(user.username, user, 'users'),
-          chat.send('sendMessage', {
+          telegram.send('sendMessage', {
             chat_id: user.chat_id,
             text: messages.stopped,
           }),

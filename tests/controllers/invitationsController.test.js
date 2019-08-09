@@ -47,7 +47,7 @@ describe(`Invitations controller`, () => {
         .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
         .mockReturnValueOnce(Promise.resolve({
           username: 'user',
-          invitations: [{ is_active: true, list: [] }]
+          invitations: [{ is_active: true, list: { name: 'default', mates: [] } }]
         },
       ));
       const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
@@ -59,7 +59,13 @@ describe(`Invitations controller`, () => {
         .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
         .mockReturnValueOnce(Promise.resolve({
           username: 'user',
-          invitations: [{ is_active: true, list: [{ username: 'mate', is_declined: true }] }]
+          invitations: [{
+            is_active: true,
+            list: {
+              name: 'default',
+              mates: [{ username: 'mate', is_declined: true }]
+            }
+          }]
         },
       ));
       const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
@@ -69,7 +75,7 @@ describe(`Invitations controller`, () => {
     test(`Should report after the invitation acceptance processed`, async () => {
       const user = {
         username: 'user',
-        invitations: [{ is_active: true, list: [{ username: 'mate' }] }]
+        invitations: [{ is_active: true, list: { name: 'default', mates: [{ username: 'mate' }] } }]
       };
       db.get = jest.fn()
         .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
@@ -93,7 +99,10 @@ describe(`Invitations controller`, () => {
         .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
         .mockReturnValueOnce(Promise.resolve({
           username: 'user',
-          invitations: [{ is_active: true, list: [{ username: 'mate', is_accepted: true }] }]
+          invitations: [{
+            is_active: true,
+            list: { name: 'default', mates: [{ username: 'mate', is_accepted: true }] }
+          }]
         },
       ));
       const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
@@ -103,7 +112,10 @@ describe(`Invitations controller`, () => {
     test(`Should report after the invitation declined and redispatch to '/process_invitations' route`, async () => {
       const user = {
         username: 'user',
-        invitations: [{ is_active: true, list: [{ username: 'mate' }] }]
+        invitations: [{
+          is_active: true,
+          list: { name: 'default', mates: [{ username: 'mate' }] },
+        }]
       };
       db.get = jest.fn()
         .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
@@ -127,7 +139,10 @@ describe(`Invitations controller`, () => {
       const user = {
         chat_id: '123123213',
         username: 'user',
-        invitations: [{ is_active: true, list: [{ username: 'mate', is_accepted: true }] }]
+        invitations: [{
+          is_active: true,
+          list: { name: 'default', mates: [{ username: 'mate', is_accepted: true }] },
+        }]
       };
       db.getAll = jest.fn()
         .mockReturnValueOnce(Promise.resolve(invitations));
@@ -151,7 +166,11 @@ describe(`Invitations controller`, () => {
       const user = {
         chat_id: '123123213',
         username: 'user',
-        invitations: [{ timeout: 1, is_active: true, list: [{ username: 'mate', asked_at: recently }] }]
+        invitations: [{
+          timeout: 1,
+          is_active: true,
+          list: { name: 'default', mates: [{ username: 'mate', asked_at: recently }] },
+        }]
       };
       db.getAll = jest.fn()
         .mockReturnValueOnce(Promise.resolve(invitations));
@@ -169,7 +188,11 @@ describe(`Invitations controller`, () => {
       const user = {
         chat_id: '123123213',
         username: 'user',
-        invitations: [{ timeout: 1, is_active: true, list: [mate] }]
+        invitations: [{
+          timeout: 1,
+          is_active: true,
+          list: { name: 'default', mates: [mate] },
+        }]
       };
       db.getAll = jest.fn()
         .mockReturnValueOnce(Promise.resolve(invitations));
@@ -188,7 +211,7 @@ describe(`Invitations controller`, () => {
       const user = {
         chat_id: '123123213',
         username: 'user',
-        invitations: [{ timeout: 1, is_active: true, list: [mate] }]
+        invitations: [{ timeout: 1, is_active: true, list: { name: 'default', mates: [mate] } }]
       };
       db.getAll = jest.fn()
         .mockReturnValueOnce(Promise.resolve(invitations));
