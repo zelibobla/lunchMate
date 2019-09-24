@@ -1,19 +1,20 @@
 const telegram = require('../services/telegramService.js');
 
 module.exports = {
-  defineChatId: (data) => {
+  defineChatId: (input) => {
+    const output = JSON.parse(JSON.stringify(input));
     try {
-      this.chatId = data.message.chat.id;
+      output.chatId = output.message.chat.id;
     } catch(error) {
-      console.warn(`Was unable to define chatId from ${JSON.stringify(data)}`);
+      console.warn(`Was unable to define chatId from ${JSON.stringify(output)}`);
     }
-    return data;
+    return output;
   },
-  sendMessage: async (text, reply_markup) => {
-    if (!this.chatId) {
-      throw `chatId is not defined; use telegramService.setChatId(Number) first`;
+  sendMessage: async (chatId, text, reply_markup) => {
+    if (!chatId) {
+      throw `chatId is mandatory`;
     }
-    const params = { chat_id: this.chatId, text };
+    const params = { chat_id: chatId, text };
     if (reply_markup) {
       params.reply_markup = reply_markup;
     }

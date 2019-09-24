@@ -11,99 +11,79 @@ describe(`Lists controller`, () => {
 
   describe(`/create_list route`, () => {
     test(`Should trigger user into /create_list_typed route`, async () => {
-      const data = { user: {
-        chat_id: '123123213',
-        username: 'user',
-      } };
-      await listsController.create.pipe[2](data);
-      expect(data.user.state.route).toBe('/create_list_typed');
-      const params = { inline_keyboard: [[
-        { callback_data: "/create_list_typed?list_name=default", text: "Skip" }
-      ]]};
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.createList, params);
-    });
-  });
-
-  describe(`/create_list_typed route`, () => {
-    test(`Should claim if typed name is already exists in the lists`, async () => {
-      const data = {
-        message: { text: 'unique' },
+      const input = {
+        chatId: 1,
         user: {
           chat_id: '123123213',
           username: 'user',
-          lists: [{ name: 'unique', mates: [] }]
-        }
+        },
       };
-      await listsController.createTyped.pipe[2](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.listNameBusy('unique'));
+      const output = await listsController.create.pipe[2](input);
+      expect(output.user.state.route).toBe('/create_list_typed');
+      const params = { inline_keyboard: [[
+        { callback_data: "/list_name?list_name=default", text: "Skip" }
+      ]]};
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.createList, params);
     });
+  });
+
+  describe(`/list_name route`, () => {
     test(`Should add the list with unique name and set the state to /add_user_typed`, async () => {
-      const data = {
-        message: { text: 'unique' },
+      const input = {
+        chatId: 1,
+        listName: 'unique',
         user: {
           chat_id: '123123213',
           username: 'user',
           lists: [{ name: 'default', mates: [] }]
         }
       };
-      await listsController.createTyped.pipe[2](data);
-      expect(data.user.state).toStrictEqual({ listName: 'unique', route: '/add_user_typed' });
-      expect(data.user.lists).toStrictEqual([{name: 'default', mates: []}, {name: 'unique', mates: []}]);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.listCreated('unique'));
-      expect(db.upsert).toHaveBeenCalledWith(data.user.username, data.user, 'users');
+      const output = await listsController.createTyped.pipe[4](input);
+      expect(output.user.state).toStrictEqual({ listName: 'unique', route: '/add_user_typed' });
+      expect(output.user.lists).toStrictEqual([{name: 'default', mates: []}, {name: 'unique', mates: []}]);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.listCreated('unique'));
+      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
     });
   });
 
   describe(`/delete_list route`, () => {
-    test(`Should claim if no lists yet`, async () => {
-      const data = { user: {
-        chat_id: '123123213',
-        username: 'user'
-      } };
-      await listsController.delete.pipe[2](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.noListsToDelete);
-    });
     test(`Should claim if only one list element left`, async () => {
-      const data = { user: {
-        chat_id: '123123213',
-        username: 'user',
-        lists: [{ name: 'default', mates: [] }]
-      } };
-      await listsController.delete.pipe[2](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.oneListShouldStay);
+      const input = {
+        chatId: 1,
+        user: {
+          chat_id: '123123213',
+          username: 'user',
+          lists: [{ name: 'default', mates: [] }]
+        }
+      };
+      await listsController.delete.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.oneListShouldStay);
     });
     test(`Should prompt user with lists to delete`, async () => {
-      const data = { user: {
-        chat_id: '123123213',
-        username: 'user',
-        lists: [
-          { name: 'default', mates: [] },
-          { name: 'unique', mates: [] },
-        ]
-      } };
-      await listsController.delete.pipe[2](data);
+      const input = {
+        chatId: 1,
+        user: {
+          chat_id: '123123213',
+          username: 'user',
+          lists: [
+            { name: 'default', mates: [] },
+            { name: 'unique', mates: [] },
+          ]
+        }
+      };
+      await listsController.delete.pipe[3](input);
       const options = { inline_keyboard: [
         [{ callback_data: "/delete_list_typed?list_name=default", text: "default" }],
-        [{ callback_data: "/delete_list_typed?list_name=unique", text: "unique" }
-      ]]};
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.chooseListToDelete, options);
+        [{ callback_data: "/delete_list_typed?list_name=unique", text: "unique" }],
+      ]};
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.chooseListToDelete, options);
     });
   });
 
   describe(`/delete_list_typed route`, () => {
-    test(`Should claim if no lists yet`, async () => {
-      const data = {
-        user: {
-          chat_id: '123123213',
-          username: 'user'
-        },
-        query_params: { list_name: 'unique' }
-      };
-      await listsController.deleteTyped.pipe[2](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.noListsToDelete);
-    });
     test(`Should claim if only one list element left`, async () => {
-      const data = {
+      const input = {
+        chatId: 1,
         user: {
           chat_id: '123123213',
           username: 'user',
@@ -111,11 +91,12 @@ describe(`Lists controller`, () => {
         },
         query_params: { list_name: 'unique' }
       };
-      await listsController.deleteTyped.pipe[2](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.oneListShouldStay);
+      await listsController.deleteTyped.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.oneListShouldStay);
     });
     test(`Should delete typed list and reset the state`, async () => {
-      const data = {
+      const input = {
+        chatId: 1,
         user: {
           chat_id: '123123213',
           username: 'user',
@@ -126,10 +107,25 @@ describe(`Lists controller`, () => {
         },
         query_params: { list_name: 'unique' }
       };
-      await listsController.deleteTyped.pipe[2](data);
-      expect(data.user.state).toStrictEqual({});
-      expect(data.user.lists).toStrictEqual([{ name: 'default', mates: [] }]);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.listDeleted('unique'));
+      const output = await listsController.deleteTyped.pipe[3](input);
+      expect(output.user.state).toStrictEqual({});
+      expect(output.user.lists).toStrictEqual([{ name: 'default', mates: [] }]);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.listDeleted('unique'));
+    });
+  });
+
+  describe(`/show_lists route`, () => {
+    test(`Should show lists`, async () => {
+      const input = {
+        chatId: 1,
+        user: {
+          chat_id: '123123213',
+          username: 'user',
+          lists: [{ name: 'qqq', mates: []}, { name: 'eee', mates: []}],
+        }
+      };
+      const output = await listsController.show.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.showLists(output.user.lists));
     });
   });
 

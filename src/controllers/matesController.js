@@ -1,6 +1,8 @@
 const db = require('../services/dbService.js');
 const chatMiddleware = require('../middlewares/chatMiddleware.js');
 const userMiddleware = require('../middlewares/userMiddleware.js');
+const listMiddleware = require('../middlewares/listMiddleware.js');
+const mateMiddleware = require('../middlewares/mateMiddleware.js');
 const messages = require('../configs/messages.js');
 
 module.exports = {
@@ -9,28 +11,24 @@ module.exports = {
     pipe: [
       chatMiddleware.defineChatId,
       userMiddleware.defineUser,
-      async (data) => {
-        if (!data.user.lists) {
-          data.user.lists = [{ name: 'default' }];
-          data.user.state = { route: '/add_user_typed' };
+      listMiddleware.normalizeUserLists,
+      mateMiddleware.defineListToAddMates,
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        if (output.list) {
+          output.user.state = { route: '/add_user_typed', listName: output.list.name };
           await Promise.all([
-            chatMiddleware.sendMessage(messages.addUserToDefault),
-            db.upsert(data.user.username, data.user, 'users'),
+            chatMiddleware.sendMessage(output.chatId, messages.addUserToOneList(output.list.name)),
+            db.upsert(output.user.username, output.user, 'users'),
           ]);
-        } else if (data.user.lists.length === 1) {
-          const list = data.user.lists[0];
-          data.user.state = { route: '/add_user_typed', listName: list.name };
-          await Promise.all([
-            chatMiddleware.sendMessage(messages.addUserToOneList(list.name)),
-            db.upsert(data.user.username, data.user, 'users'),
-          ]);
-        } else {
-          data.user.state = { route: '/add_user_choose_list' };
-          await Promise.all([
-            chatMiddleware.sendMessage(messages.addUserChooseList(data.user.lists)),
-            db.upsert(data.user.username, data.user, 'users'),
-          ]);
+          return output;
         }
+        output.user.state = { route: '/add_user_choose_list' };
+        await Promise.all([
+          chatMiddleware.sendMessage(output.chatId, messages.addUserChooseList(output.user.lists)),
+          db.upsert(output.user.username, output.user, 'users'),
+        ]);
+        return output;
       }
     ],
   },
@@ -39,20 +37,19 @@ module.exports = {
     pipe: [
       chatMiddleware.defineChatId,
       userMiddleware.defineUser,
-      async (data) => {
-        const name = data.message.text;
-        if (!data.user.lists) {
-          data.user.lists = [];
-        }
-        const list = data.user.lists.find(l => l.name.toLowerCase() === name.toLowerCase());
-        if (!list) {
-          return await chatMiddleware.sendMessage(messages.listNameNotFound(name, data.user.lists));
-        }
-        data.user.state = { route: '/add_user_typed', listName: list.name };
-          await Promise.all([
-            chatMiddleware.sendMessage(messages.addUserToList(list.name)),
-            db.upsert(data.user.username, data.user, 'users'),
-          ]);
+      listMiddleware.normalizeUserLists,
+      async input => await listMiddleware.findListByTerm(
+        input,
+        messages.listNameNotFound(input.message.text, input.user.lists),
+      ),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        output.user.state = { route: '/add_user_typed', listName: output.list.name };
+        await Promise.all([
+          chatMiddleware.sendMessage(output.chatId, messages.addUserToList(output.list.name)),
+          db.upsert(output.user.username, output.user, 'users'),
+        ]);
+        return output;
       }
     ],
   },
@@ -61,31 +58,23 @@ module.exports = {
     pipe: [
       chatMiddleware.defineChatId,
       userMiddleware.defineUser,
-      async (data) => {
-        const searchedMateUsername = data.message.text.replace(/^@/, '').toLowerCase();
-        const foundMate = await db.get('username', searchedMateUsername, 'users');
-        if (!foundMate) {
-          return await chatMiddleware.sendMessage(messages.mateNotFound(searchedMateUsername));
-        }
-        if (!data.user.state.listName) {
-          return await chatMiddleware.sendMessage(messages.addUserToUndefinedList);
-        }
-        const { listName } = data.user.state;
-        if (!listName) {
-          return await chatMiddleware.sendMessage(messages.addUserToUndefinedList);
-        }
-        const list = data.user.lists.find(l => l.name === listName);
-        if (!list) {
-          return await chatMiddleware.sendMessage(messages.addUserToUndefinedList);
-        }
+      async input => await userMiddleware.defineUserFromTyped(
+        input,
+        messages.mateNotFound(input.message.text),
+      ),
+      async input => await listMiddleware.defineListFromState(input, messages.addUserToUndefinedList),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        const list = output.user.lists.find(l => l.name === output.list.name);
         if (!list.mates) {
           list.mates = [];
         }
-        if (!list.mates.find(u => u.username === foundMate.username)) {
-          list.mates.push({ username: foundMate.username, chat_id: foundMate.chat_id });
-          await db.upsert(data.user.username, data.user, 'users');
+        if (!list.mates.find(u => u.username === output.mate.username)) {
+          list.mates.push({ username: output.mate.username, chat_id: output.mate.chat_id });
+          await db.upsert(output.user.username, output.user, 'users');
         }
-        await chatMiddleware.sendMessage(messages.added(foundMate.username, list));
+        await chatMiddleware.sendMessage(output.chatId, messages.added(output.mate.username, list));
+        return output;
       },
     ]
   }

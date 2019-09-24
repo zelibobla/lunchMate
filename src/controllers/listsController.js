@@ -1,6 +1,7 @@
 const db = require('../services/dbService.js');
 const chatMiddleware = require('../middlewares/chatMiddleware.js');
 const userMiddleware = require('../middlewares/userMiddleware.js');
+const listMiddleware = require('../middlewares/listMiddleware.js');
 const messages = require('../configs/messages.js');
 
 module.exports = {
@@ -8,47 +9,42 @@ module.exports = {
     route: '/create_list',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
-      async (data) => {
-        data.user.state = { route: '/create_list_typed' };
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        output.user.state = { route: '/create_list_typed' };
         await Promise.all([
           chatMiddleware.sendMessage(
+            input.chatId,
             messages.createList,
             { inline_keyboard: [[{
                 text: 'Skip',
-                callback_data: `/create_list_typed?list_name=default`,
+                callback_data: `/list_name?list_name=default`,
               }]]
             }
           ),
-          db.upsert(data.user.username, data.user, 'users'),
+          db.upsert(output.user.username, output.user, 'users'),
         ]);
+        return output;
       }
     ],
   },
   createTyped: {
-    route: '/create_list_typed',
+    route: '/list_name',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
-      async (data) => {
-        let name;
-        if (data.query_params && data.query_params.list_name){
-          name = data.query_params.list_name;
-        } else {
-          name = data.message.text;
-        }
-        if (!data.user.lists) {
-          data.user.lists = [];
-        }
-        if (data.user.lists.find(l => l.name === name)) {
-          return await chatMiddleware.sendMessage(messages.listNameBusy(name));
-        }
-        data.user.lists.push({ name, mates: [] });
-        data.user.state = { route: '/add_user_typed', listName: name };
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      listMiddleware.defineListName,
+      async input => await listMiddleware.ifListNameBusy(input, messages.listNameBusy(output.listName)),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        output.user.lists.push({ name: output.listName, mates: [] });
+        output.user.state = { route: '/add_user_typed', listName: output.listName };
         await Promise.all([
-          chatMiddleware.sendMessage(messages.listCreated(name)),
-          db.upsert(data.user.username, data.user, 'users'),
+          chatMiddleware.sendMessage(input.chatId, messages.listCreated(output.listName)),
+          db.upsert(output.user.username, output.user, 'users'),
         ]);
+        return output;
       }
     ],
   },
@@ -56,24 +52,25 @@ module.exports = {
     route: '/delete_list',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
-      async (data) => {
-        if (!data.user.lists || !data.user.lists.length) {
-          return await chatMiddleware.sendMessage(messages.noListsToDelete);
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      async input => await listMiddleware.ifNoList(input, messages.noListsToDelete),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        if (output.user.lists.length === 1) {
+          return await chatMiddleware.sendMessage(input.chatId, messages.oneListShouldStay);
         }
-        if (data.user.lists.length === 1) {
-          return await chatMiddleware.sendMessage(messages.oneListShouldStay);
-        }
-        const listsOptions = data.user.lists.map(l => ([{
+        const listsOptions = output.user.lists.map(l => ([{
           text: l.name,
           callback_data: `/delete_list_typed?list_name=${l.name.toLowerCase()}`
         }]));
         await Promise.all([
           chatMiddleware.sendMessage(
+            input.chatId,
             messages.chooseListToDelete,
             { inline_keyboard: listsOptions },
           )
         ]);
+        return output;
       }
     ],
   },
@@ -81,21 +78,21 @@ module.exports = {
     route: '/delete_list_typed',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
-      async (data) => {
-        const name = data.query_params.list_name;
-        if (!data.user.lists || !data.user.lists.length) {
-          return await chatMiddleware.sendMessage(messages.noListsToDelete);
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      async input => await listMiddleware.ifNoList(input, messages.noListsToDelete),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        const name = output.query_params.list_name;
+        if (output.user.lists.length === 1) {
+          return await chatMiddleware.sendMessage(input.chatId, messages.oneListShouldStay);
         }
-        if (data.user.lists.length === 1) {
-          return await chatMiddleware.sendMessage(messages.oneListShouldStay);
-        }
-        data.user.lists = data.user.lists.filter(l => l.name.toLowerCase() !== name);
-        data.user.state = {};
+        output.user.lists = output.user.lists.filter(l => l.name.toLowerCase() !== name);
+        output.user.state = {};
         await Promise.all([
-          chatMiddleware.sendMessage(messages.listDeleted(name)),
-          db.upsert(data.user.username, data.user, 'users'),
+          chatMiddleware.sendMessage(input.chatId, messages.listDeleted(name)),
+          db.upsert(output.user.username, output.user, 'users'),
         ]);
+        return output;
       }
     ],
   },
@@ -103,12 +100,11 @@ module.exports = {
     route: '/show_lists',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
-      async (data) => {
-        if (!data.user.lists || !data.user.lists.length) {
-          return await chatMiddleware.sendMessage(messages.noListsToShow);
-        }
-        await chatMiddleware.sendMessage(messages.showLists(data.user.lists));
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      async input => await listMiddleware.ifNoList(input, messages.noListsToShow),
+      async input => {
+        await chatMiddleware.sendMessage(input.chatId, messages.showLists(input.user.lists));
+        return input;
       }
     ],
   },

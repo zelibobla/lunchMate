@@ -1,4 +1,6 @@
 const routesMap = require('../controllers/index.js');
+const chatMiddleware = require('../middlewares/chatMiddleware.js');
+
 const dispatch = async(route, data) => {
   if (!routesMap[route]) {
     route = '/undefined';
@@ -6,7 +8,15 @@ const dispatch = async(route, data) => {
   const pipe = routesMap[route];
   let prevResult = data;
   for(const act of pipe) {
-    prevResult = await act(prevResult, dispatch);
+    try {
+      prevResult = await act(prevResult, dispatch);
+    } catch (error) {
+      if (error.type && error.type === 'user_input') {
+        return await chatMiddleware.sendMessage(data.chatId, error.message);
+      } else {
+        throw error;
+      }
+    }
   }
 };
 module.exports = dispatch;

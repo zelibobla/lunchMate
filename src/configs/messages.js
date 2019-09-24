@@ -18,8 +18,6 @@ module.exports = {
   createList: `Type the name of the list, or skip for default name`,
   addUserChooseList: lists => `Choose the list, where to add a user, please:\n${displayLists(lists)}`,
   addUserListNotFound: (name, lists) => `List «${name}» not found. Type it again please:\n${displayLists(lists)}`,
-  addUserToDefault: `Well let's form your default list. Just type the username of a telegram ` +
-    `user you want to add`,
   addUserToOneList: name => `You have one list «${name}». Will add user to it. Just type the username of a telegram ` +
     `user you want to add`,
   addUserToUndefinedList: `No list defined to add the user. Start again please`,
@@ -37,6 +35,7 @@ module.exports = {
   invitePending: (username, mateUsername, invite) =>
     `Hi ${mateUsername}, aren't you hungry? ${invitation(username, invite)}`,
   help: 'Here is the list of available commands:\n/start\n/create_list\n/create_template\n/help\n/delete',
+  typeTemplateName: `Type the template name, please`,
   typeEatPlace: `Where do you going for a lunch?`,
   typeMeetPlace: `Where do you going to meet a mate before going together?`,
   typeDelay: `How many minutes mate has to reach the meeting place?`,
@@ -51,6 +50,8 @@ module.exports = {
   listNotFound: name => `You reacted on the invitation, but you're not in the list of ${name}. ` +
     `Reaction ignored. Maybe this is because the invitation is outdated?`,
   listNameBusy: name => `Sorry, the name «${name}» is aleady exists in your lists`,
+  templateNameBusy: name => `Sorry, the name «${name}» is aleady exists in your templates`,
+  templateNotFound: `Sorry, the template not found`,
   mateNotFound: name => `Sorry, there is no ${name} in my database. Are you sure he found me ` +
     `and typed /start ?`,
   nicknameNeeded: name => `Ooops, ${name}, I need your telegram name to go, but it's not defined. Open your ` +
@@ -62,7 +63,7 @@ module.exports = {
   oneListShouldStay: `Only one list left, let's keep it`,
   registerFirst: `I don't find you in my DB. Did you type /start first?`,
   removed: name => `${name} removed from your list`,
-  run: (name, invite) => `Great ${name}, I've started working with your list «${invitation.list.name}»\n. ` +
+  run: (name, invite) => `Great ${name}, I've started working with your list «${invite.list.name}»\n. ` +
     `The invitation will be as follows:\n«${invitation(name, invite)}»\n` +
     `Type /stop if you want to stop inviting.`,
   start: name => `Hello ${name}! I've remembered you. Somebody now can find you ` +

@@ -1,19 +1,19 @@
-const chat = require('../middlewares/chatMiddleware.js');
+const chatMiddleware = require('../middlewares/chatMiddleware.js');
 const messages = require('../configs/messages.js');
 
 module.exports = {
   undefined: {
     route: '/undefined',
     pipe: [
-      chat.defineChatId,
-      async () => await chat.sendMessage(messages.undefined),
+      chatMiddleware.defineChatId,
+      async input => await chatMiddleware.sendMessage(input.chatId, messages.undefined),
     ]
   },
   help: {
     route: '/help',
     pipe: [
-      chat.defineChatId,
-      async () => await chat.sendMessage(messages.help),
+      chatMiddleware.defineChatId,
+      async input => await chatMiddleware.sendMessage(input.chatId, messages.help),
     ]
   },
 }

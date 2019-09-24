@@ -13,51 +13,29 @@ describe(`Invitations controller`, () => {
   });
 
   describe(`/accept route`, () => {
-    test(`Should claim if mate not found`, async () => {
-      db.get = jest.fn().mockReturnValue(Promise.resolve(undefined));
-      const data = { from: { username: 'mate' } };
-      await invitationsController.accept.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.mateNotFound(data.from.username));
-    });
-    test(`Should claim if mate found, but no query_params provided`, async () => {
-      db.get = jest.fn().mockReturnValue(Promise.resolve({ username: 'mate' }));
-      const data = { from: { username: 'mate' }, query_params: undefined };
-      await invitationsController.accept.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.invalidQueryParams(data.query_params));
-    });
-    test(`Should claim if user not found`, async () => {
-      db.get = jest.fn()
-        .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
-        .mockReturnValueOnce(Promise.resolve(undefined));
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.accept.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.mateNotFound(data.query_params.username));
-    });
     test(`Should claim if found user has no invitations`, async () => {
-      db.get = jest.fn()
-        .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
-        .mockReturnValueOnce(Promise.resolve({ username: 'user', invitations: [] }));
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.accept.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.invitationNotFound);
-      expect(db.delete).toHaveBeenCalledWith(data.query_params.username, 'invitations');
+      const input = { chatId: 1, user: { username: 'mate' }, queryUser: { username: 'user', invitations: [] } };
+      const output = await invitationsController.accept.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(output.chatId, messages.invitationNotFound);
+      expect(db.delete).toHaveBeenCalledWith(output.queryUser.username, 'invitations');
     });
     test(`Should claim if mate is absent in the invitation list`, async () => {
-      db.get = jest.fn()
-        .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
-        .mockReturnValueOnce(Promise.resolve({
+      const input = {
+        chatId: 1,
+        user: { username: 'mate' },
+        queryUser: {
           username: 'user',
-          invitations: [{ is_active: true, list: { name: 'default', mates: [] } }]
+          invitations: [{ is_active: true, list: { name: 'default', mates: [] } }],
         },
-      ));
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.accept.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.listNotFound(data.query_params.username));
+      };
+      const output = await invitationsController.accept.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(output.chatId, messages.listNotFound(output.queryUser.username));
     });
     test(`Should claim if mate has already declined the invitation`, async () => {
-      db.get = jest.fn()
-        .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
-        .mockReturnValueOnce(Promise.resolve({
+      const input = {
+        chatId: 1,
+        user: { username: 'mate' },
+        queryUser: {
           username: 'user',
           invitations: [{
             is_active: true,
@@ -66,30 +44,32 @@ describe(`Invitations controller`, () => {
               mates: [{ username: 'mate', is_declined: true }]
             }
           }]
-        },
-      ));
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.accept.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.listNotFound(data.query_params.username));
+        }
+      };
+      const output = await invitationsController.accept.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(output.chatId, messages.listNotFound(output.queryUser.username));
     });
     test(`Should report after the invitation acceptance processed`, async () => {
       const user = {
+        chat_id: 123123,
         username: 'user',
         invitations: [{ is_active: true, list: { name: 'default', mates: [{ username: 'mate' }] } }]
       };
-      db.get = jest.fn()
-        .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
-        .mockReturnValueOnce(Promise.resolve(user));
       telegram.send = jest.fn();
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.accept.pipe[1](data);
+      const input = { chatId: 1, user: { username: 'mate' }, queryUser: user };
+      const output = await invitationsController.accept.pipe[3](input);
       expect(chat.sendMessage).toHaveBeenCalledWith(
-        messages.youAccepted(user.username, data.from.username)
+        output.chatId,
+        messages.youAccepted(user.username, output.user.username)
       );
-      /* expect(chat.sendMessage).toHaveBeenCalledWith(
-        messages.yourInvitationAccepted(user.username, data.from.username)
-      ); */
-      expect(db.upsert).toHaveBeenCalledWith(user.username, user, 'users')
+      expect(telegram.send).toHaveBeenCalledWith(
+        'sendMessage',
+        {
+          chat_id: user.chat_id,
+          text: messages.yourInvitationAccepted(user.username, output.user.username),
+        }
+      );
+      expect(db.upsert).toHaveBeenCalledWith(user.username, output.queryUser, 'users')
     });
   });
 
@@ -105,9 +85,9 @@ describe(`Invitations controller`, () => {
           }]
         },
       ));
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.decline.pipe[1](data);
-      expect(chat.sendMessage).toHaveBeenCalledWith(messages.listNotFound(data.query_params.username));
+      const input = { chatId: 1, from: { username: 'mate' }, query_params: { username: 'user' } };
+      await invitationsController.decline.pipe[1](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.listNotFound(input.query_params.username));
     });
     test(`Should report after the invitation declined and redispatch to '/process_invitations' route`, async () => {
       const user = {
@@ -121,10 +101,11 @@ describe(`Invitations controller`, () => {
         .mockReturnValueOnce(Promise.resolve({ username: 'mate' }))
         .mockReturnValueOnce(Promise.resolve(user));
       const redispatch = jest.fn();
-      const data = { from: { username: 'mate' }, query_params: { username: 'user' } };
-      await invitationsController.decline.pipe[1](data, redispatch);
+      const input = { chatId: 1, from: { username: 'mate' }, query_params: { username: 'user' } };
+      await invitationsController.decline.pipe[1](input, redispatch);
       expect(chat.sendMessage).toHaveBeenCalledWith(
-        messages.youDeclined(user.username, data.from.username)
+        input.chatId,
+        messages.youDeclined(user.username, input.from.username)
       );
       expect(db.upsert).toHaveBeenCalledWith(user.username, user, 'users');
       expect(redispatch).toHaveBeenCalledWith('/process_invitations');
