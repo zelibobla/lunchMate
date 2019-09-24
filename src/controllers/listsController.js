@@ -35,7 +35,7 @@ module.exports = {
       chatMiddleware.defineChatId,
       async input => await userMiddleware.defineUser(input, messages.registerFirst),
       listMiddleware.defineListName,
-      async input => await listMiddleware.ifListNameBusy(input, messages.listNameBusy(output.listName)),
+      async input => await listMiddleware.ifListNameBusy(input, messages.listNameBusy(input.listName)),
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         output.user.lists.push({ name: output.listName, mates: [] });

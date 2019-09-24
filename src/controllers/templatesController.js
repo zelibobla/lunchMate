@@ -68,7 +68,9 @@ module.exports = {
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         const template = output.user.templates.find(t => t.name === output.template.name);
-        template.eat_place = output.message.text;
+        template.eat_place = output.query_params && output.query_params.template_eat_place 
+          ? output.query_params.template_eat_place
+          : output.message.text;
         output.user.state = { route: '/template_meet_place', templateName: template.name };
         await Promise.all([
           db.upsert(output.user.username, output.user, 'users'),
@@ -94,7 +96,9 @@ module.exports = {
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         const template = output.user.templates.find(t => t.name === output.template.name);
-        template.meet_place = output.message.text;
+        template.meet_place = output.query_params && output.query_params.template_meet_place 
+          ? output.query_params.template_meet_place
+          : output.message.text;
         output.user.state = { route: '/template_delay', templateName: template.name };
         await Promise.all([
           db.upsert(output.user.username, output.user, 'users'),
@@ -120,8 +124,10 @@ module.exports = {
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         const template = output.user.templates.find(t => t.name === output.template.name);
-        template.delay = output.message.text;
-        output.user.state = { route: '/template_timeout' };
+        template.delay = output.query_params && output.query_params.template_delay 
+          ? output.query_params.template_delay
+          : output.message.text;
+        output.user.state = { route: '/template_timeout', templateName: template.name };
         await Promise.all([
           db.upsert(output.user.username, output.user, 'users'),
           chatMiddleware.sendMessage(
@@ -146,11 +152,13 @@ module.exports = {
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         const template = output.user.templates.find(t => t.name === output.template.name);
-        template.timeout = output.message.text;
+        template.timeout = output.query_params && output.query_params.template_timeout 
+          ? output.query_params.template_timeout
+          : output.message.text;
         output.user.state = {};
         await Promise.all([
           db.upsert(output.user.username, output.user, 'users'),
-          chatMiddleware.sendMessage(output.chatId, messages.templateCreated(template)),
+          chatMiddleware.sendMessage(output.chatId, messages.templateCreated(output.user.username, template)),
         ]);
         return output;
       },

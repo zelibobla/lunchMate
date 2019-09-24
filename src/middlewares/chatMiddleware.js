@@ -6,7 +6,7 @@ module.exports = {
     try {
       output.chatId = output.message.chat.id;
     } catch(error) {
-      console.warn(`Was unable to define chatId from ${JSON.stringify(output)}`);
+      console.log(`Was unable to define chatId from ${JSON.stringify(output)}`);
     }
     return output;
   },

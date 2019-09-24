@@ -72,8 +72,8 @@ module.exports = {
   startFromBot: name => `Hello bot ${name}! We can't start working sorry. I'll see you in another ` +
     `life when we are both cats.`,
   templateBrief,
-  templateCreated: template => `The template created. It will look like follows:\n${invitation('Bob', template)}` +
-    `Type /run to start invite mates by list`,
+  templateCreated: (username, template) => `The template created. It will look like follows:\n${invitation(username, template)}` +
+    `\nType /run to start invite mates by list`,
   templateDeleted: template => `The template deleted: ${templateBrief(template)}`,
   templateNotFound: `The template not found`,
   showLists: displayLists,

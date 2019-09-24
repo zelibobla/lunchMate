@@ -113,7 +113,7 @@ describe(`Templates controller`, () => {
       expect(output.user.state).toStrictEqual({});
       expect(output.user.templates[0].timeout).toBe('5');
       expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
-      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.templateCreated({ timeout: 5 }));
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.templateCreated(input.user.username, { timeout: 5 }));
     });
   });
 

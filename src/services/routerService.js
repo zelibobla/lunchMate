@@ -34,13 +34,13 @@ module.exports = {
           if (parts[1]) {
             data.query_params = parts[1].split('&').reduce((memo, element) => {
               const [paramName, paramValue] = element.split('=');
-              memo[paramName] = paramValue;
+              memo[paramName] = decodeURIComponent(paramValue);
               return memo;
             }, {});
           }
         }
-        if (user) {
-          user.state = {};
+        if (user && user.state) {
+          delete user.state.route;
           await db.upsert(user.username, user, 'users');
         }
       }
