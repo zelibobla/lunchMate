@@ -21,7 +21,7 @@ module.exports = {
         await chatMiddleware.sendMessage(
           input.chatId,
           messages.start(user.username),
-          { inline_keyboard: [[{ text: 'yes', callback_data: '/create_list' }]] },
+          { inline_keyboard: [[{ text: 'Yes', callback_data: '/create_list' }]] },
         );
         return output;
       },

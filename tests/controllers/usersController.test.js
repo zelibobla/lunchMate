@@ -16,7 +16,7 @@ describe(`Users controller`, () => {
         message: { from: { chatId: 1, username: 'user' } },
       };
       const output = await usersController.create.pipe[3](input);
-      const inlineKeyboard = {"inline_keyboard": [[{"callback_data": "/create_list", "text": "yes"}]]};
+      const inlineKeyboard = {"inline_keyboard": [[{"callback_data": "/create_list", "text": "Yes"}]]};
       expect(chat.sendMessage).toHaveBeenCalledWith(
         output.chatId,
         messages.start(output.message.from.username),

@@ -68,7 +68,8 @@ describe(`Mates controller`, () => {
       };
       const output = await matesController.addUserTyped.pipe[4](input);
       expect(output.user.lists[0].mates).toStrictEqual([mate]);
-      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.added('mate', output.user.lists[0]));
+      const inlineKeyboard = { inline_keyboard: [[{ text: 'Run', callback_data: '/run' }]] };
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.added('mate', output.user.lists[0]), inlineKeyboard );
     });
   });
 });

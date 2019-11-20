@@ -158,7 +158,14 @@ module.exports = {
         output.user.state = {};
         await Promise.all([
           db.upsert(output.user.username, output.user, 'users'),
-          chatMiddleware.sendMessage(output.chatId, messages.templateCreated(output.user.username, template)),
+          chatMiddleware.sendMessage(
+            output.chatId,
+            messages.templateCreated(output.user.username, template),
+            { inline_keyboard: [[{
+              text: 'Run',
+              callback_data: `/run`,
+            }]]}
+          ),
         ]);
         return output;
       },

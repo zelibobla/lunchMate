@@ -72,7 +72,11 @@ module.exports = {
           list.mates.push({ username: output.mate.username, chat_id: output.mate.chat_id });
           await db.upsert(output.user.username, output.user, 'users');
         }
-        await chatMiddleware.sendMessage(output.chatId, messages.added(output.mate.username, list));
+        await chatMiddleware.sendMessage(
+          output.chatId,
+          messages.added(output.mate.username, list),
+          { inline_keyboard: [[{ text: 'Run', callback_data: '/run' }]] },
+        );
         return output;
       },
     ]

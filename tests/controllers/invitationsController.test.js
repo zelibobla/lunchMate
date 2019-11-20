@@ -207,8 +207,8 @@ describe(`Invitations controller`, () => {
           text: messages.invitePending(user.username, mate.username, user.invitations[0]),
           reply_markup: { inline_keyboard: [
             [
-              { text: 'yes', callback_data: `/accept?username=${user.username}` },
-              { text: 'no', callback_data: `/decline?username=${user.username}` },
+              { text: 'Yes', callback_data: `/accept?username=${user.username}` },
+              { text: 'No', callback_data: `/decline?username=${user.username}` },
             ]
           ]}
         }

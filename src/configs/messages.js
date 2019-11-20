@@ -24,7 +24,7 @@ module.exports = {
   addUserToList: name => `Well, the list is «${name}». Now type the username of a telegram ` +
     `user you want to add`,
   added: (name, list) => `@${name} added into the «${list.name}» list.\n Now it looks as follows:\n${displayList(list)}\n` +
-    `Type the next username if you want to add more or type /run to run the invitation`,
+    `Type the next username if you want to add more or click «run» to run the invitation`,
   chooseList: `Please, click on the list to use for invitation`,
   chooseTemplate: `Please, click on the template to use for invitation or type /create_template`,
   chooseListToDelete: `Choose the list to delete, please:`,
@@ -58,7 +58,7 @@ module.exports = {
     `settings in telegram and set up your nick, please. Come back after that please. I'm already missing.`,
   noListsToDelete: `You have no lists, nothing to delete`,
   noListsToShow: `You have no lists yet. Type /create_list`,
-  noTemplates: `There is no any invitation template. Would you create any? /create_template`,
+  noTemplates: `There is no any invitation template. Click «Create template» to create first template`,
   nothingToStop: `There was nothing to stop, no worries`,
   oneListShouldStay: `Only one list left, let's keep it`,
   registerFirst: `I don't find you in my DB. Did you type /start first?`,
@@ -73,7 +73,7 @@ module.exports = {
     `life when we are both cats.`,
   templateBrief,
   templateCreated: (username, template) => `The template created. It will look like follows:\n${invitation(username, template)}` +
-    `\nType /run to start invite mates by list`,
+    `\nClick «Run» to start invite mates by list`,
   templateDeleted: template => `The template deleted: ${templateBrief(template)}`,
   templateNotFound: `The template not found`,
   showLists: displayLists,

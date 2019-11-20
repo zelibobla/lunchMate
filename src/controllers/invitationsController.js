@@ -38,8 +38,8 @@ const processInvitation = async function(row) {
     text: messages.invitePending(user.username, mate.username, invitation),
     reply_markup: { inline_keyboard: [
       [
-        { text: 'yes', callback_data: `/accept?username=${user.username}` },
-        { text: 'no', callback_data: `/decline?username=${user.username}` },
+        { text: 'Yes', callback_data: `/accept?username=${user.username}` },
+        { text: 'No', callback_data: `/decline?username=${user.username}` },
       ]
     ]}});
   mate.asked_at = +(new Date());
@@ -165,9 +165,11 @@ module.exports = {
           return await chatMiddleware.sendMessage(input.chatId, messages.alreadyRunning);
         }
         if (!user.templates || !user.templates.length) {
-          return await Promise.all([
-            chatMiddleware.sendMessage(input.chatId, messages.noTemplates),
-          ]);
+          return await chatMiddleware.sendMessage(
+            input.chatId,
+            messages.noTemplates,
+            { inline_keyboard: [[{ text: 'Create template', callback_data: '/create_template' }]] }
+          );
         }
         let templateIndex;
         if (input.user.templates.length === 1){
