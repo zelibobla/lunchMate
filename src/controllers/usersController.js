@@ -17,7 +17,15 @@ module.exports = {
         const output = JSON.parse(JSON.stringify(input));
         const user = output.message.from;
         user.chat_id = output.chatId;
-        await db.upsert(user.username, user, 'users');
+        const existing = await db.get('username', user.username, 'users');
+        if (existing) {
+          await chatMiddleware.sendMessage(
+            input.chatId,
+            messages.startExisting(user.username)
+          );
+          return output;  
+        }
+        await db.upsert(user.username, user, 'users', /** force = */ false);
         await chatMiddleware.sendMessage(
           input.chatId,
           messages.start(user.username),

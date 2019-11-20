@@ -69,6 +69,7 @@ module.exports = {
   start: name => `Hello ${name}! I've remembered you. Somebody now can find you ` +
     `in my database and add you into the invitations list, so you can be invited. Would you like to ` +
     `create your own list?`,
+  startExisting: name => `Hello ${name}! You're already in my memory. Type /help if you've got lost`,
   startFromBot: name => `Hello bot ${name}! We can't start working sorry. I'll see you in another ` +
     `life when we are both cats.`,
   templateBrief,

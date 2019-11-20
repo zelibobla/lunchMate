@@ -22,7 +22,7 @@ describe(`Users controller`, () => {
         messages.start(output.message.from.username),
         inlineKeyboard,
       );
-      expect(db.upsert).toHaveBeenCalledWith(output.message.from.username, output.message.from, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.message.from.username, output.message.from, 'users', false);
     });
   });
 
