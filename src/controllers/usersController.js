@@ -14,14 +14,16 @@ module.exports = {
         messages.usernameUndefined(input.message.from.first_name),
       ),
       async (input) => {
-        const user = input.message.from;
-        user.chat_id = input.chatId;
+        const output = JSON.parse(JSON.stringify(input));
+        const user = output.message.from;
+        user.chat_id = output.chatId;
         await db.upsert(user.username, user, 'users');
         await chatMiddleware.sendMessage(
           input.chatId,
           messages.start(user.username),
           { inline_keyboard: [[{ text: 'yes', callback_data: '/create_list' }]] },
         );
+        return output;
       },
     ]
   },
@@ -30,10 +32,12 @@ module.exports = {
     pipe: [
       chatMiddleware.defineChatId,
       async (input) => {
-        const { username } = input.message.from;
-        const name = input.message.chat.first_name;
+        const output = JSON.parse(JSON.stringify(input));
+        const { username } = output.message.from;
+        const name = output.message.chat.first_name;
         await db.delete(username, 'users');
         await chatMiddleware.sendMessage(input.chatId, messages.delete(name));
+        return output;
       }
     ],
   }

@@ -2,7 +2,6 @@ const db = require('../services/dbService.js');
 const chatMiddleware = require('../middlewares/chatMiddleware.js');
 const userMiddleware = require('../middlewares/userMiddleware.js');
 const listMiddleware = require('../middlewares/listMiddleware.js');
-const mateMiddleware = require('../middlewares/mateMiddleware.js');
 const messages = require('../configs/messages.js');
 
 module.exports = {
@@ -12,7 +11,7 @@ module.exports = {
       chatMiddleware.defineChatId,
       userMiddleware.defineUser,
       listMiddleware.normalizeUserLists,
-      mateMiddleware.defineListToAddMates,
+      listMiddleware.defineListToAddMates,
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         if (output.list) {
