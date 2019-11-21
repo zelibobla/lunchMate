@@ -123,16 +123,23 @@ describe(`Templates controller`, () => {
   });
 
   describe(`/delete_template route`, () => {
-    test(`Should claim if trying to delete not existing template`, async () => {
-      const input = { chatId: 1, user: { username: 'user', templates: [] }, query_params: { template_index: '5' } };
+  /*   test(`Should claim if trying to delete not existing template`, async () => {
+      const input = { chatId: 1, user: { username: 'user', templates: [] }, query_params: { template_name: 'test' } };
       await templatesController.delete.pipe[2](input);
       expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.templateNotFound);
+    }); */
+    test(`Should not delete specified template if it's the last one`, async () => {
+      const template = { name: 'test', meet_place: 'A', eat_place: 'B', delay: 5, timeout: 1 };
+      const input = { chatId: 1, user: { username: 'user', templates: [template] }, query_params: { template_name: 'test' } };
+      await templatesController.deleteTyped.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.oneTemplateShouldStay);
     });
     test(`Should delete specified template`, async () => {
-      const template = { meet_place: 'A', eat_place: 'B', delay: 5, timeout: 1 };
-      const input = { chatId: 1, user: { username: 'user', templates: [template] }, query_params: { template_index: '0' } };
-      await templatesController.delete.pipe[2](input);
-      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.templateDeleted(template));
+      const template0 = { name: 'test', meet_place: 'A', eat_place: 'B', delay: 5, timeout: 1 };
+      const template1 = { name: 'test1', meet_place: 'A', eat_place: 'B', delay: 5, timeout: 1 };
+      const input = { chatId: 1, user: { username: 'user', templates: [template0, template1] }, query_params: { template_name: 'test' } };
+      await templatesController.deleteTyped.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.templateDeleted(template0.name));
     });
   });
 

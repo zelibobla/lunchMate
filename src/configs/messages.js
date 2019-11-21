@@ -6,12 +6,17 @@ const invitation = (username, invite) =>
 const templateBrief = template => `${template.timeout} mins to think, ${template.delay} mins to get ` +
   `${template.meet_place}, going to ${template.eat_place}`;
 
-const displayLists = (lists) => Object.keys(lists).reduce((memo, key) => {
+const displayLists = lists => Object.keys(lists).reduce((memo, key) => {
   memo += `${lists[key].name}: ${displayList(lists[key])}\n`;
   return memo;
 }, '');
 
-const displayList = (list) => list.mates.map(m => m.username).join(' -> ');
+const displayList = list => list.mates.map(m => m.username).join(' -> ');
+
+const displayTemplates = templates => Object.keys(templates).reduce((memo, key) => {
+  memo += `${templates[key].name}: ${templateBrief(templates[key])}\n`;
+  return memo;
+}, '');
 
 module.exports = {
   alreadyRunning: `I'm already working with your list. Just wait till I done, please, or type /stop.`,
@@ -28,6 +33,7 @@ module.exports = {
   chooseList: `Please, click on the list to use for invitation`,
   chooseTemplate: `Please, click on the template to use for invitation or type /create_template`,
   chooseListToDelete: `Choose the list to delete, please:`,
+  chooseTemplateToDelete: `Choose the template to delete, please:`,
   delete: name => `It\'s sad to delete you ${name}. But well, as you wish. Deleted`,
   deleteListTyped: name => `List «${name}» deleted`,
   dontCreateList: `No worries, just type /create_list when you'd like to create the list`,
@@ -50,8 +56,6 @@ module.exports = {
   listNotFound: name => `You reacted on the invitation, but you're not in the list of ${name}. ` +
     `Reaction ignored. Maybe this is because the invitation is outdated?`,
   listNameBusy: name => `Sorry, the name «${name}» is aleady exists in your lists`,
-  templateNameBusy: name => `Sorry, the name «${name}» is aleady exists in your templates`,
-  templateNotFound: `Sorry, the template not found`,
   mateNotFound: name => `Sorry, there is no ${name} in my database. Are you sure he found me ` +
     `and typed /start ?`,
   nicknameNeeded: name => `Ooops, ${name}, I need your telegram name to go, but it's not defined. Open your ` +
@@ -61,6 +65,7 @@ module.exports = {
   noTemplates: `There is no any invitation template. Click «Create template» to create first template`,
   nothingToStop: `There was nothing to stop, no worries`,
   oneListShouldStay: `Only one list left, let's keep it`,
+  oneTemplateShouldStay: `Only one template left, let's keep it`,
   registerFirst: `I don't find you in my DB. Did you type /start first?`,
   removed: name => `${name} removed from your list`,
   run: (name, invite) => `Great ${name}, I've started working with your list «${invite.list.name}»\n. ` +
@@ -75,9 +80,11 @@ module.exports = {
   templateBrief,
   templateCreated: (username, template) => `The template created. It will look like follows:\n${invitation(username, template)}` +
     `\nClick «Run» to start invite mates by list`,
-  templateDeleted: template => `The template deleted: ${templateBrief(template)}`,
-  templateNotFound: `The template not found`,
+  templateDeleted: name => `The template «${name}» deleted`,
+  templateNameBusy: name => `Sorry, the name «${name}» is aleady exists in your templates`,
+  templateNotFound: `Sorry, the template not found`,
   showLists: displayLists,
+  showTemplates: displayTemplates,
   stopped: `Ok. I've stopped the list`,
   undefined: 'Sorry, I don\'t get you. Type /help for the list of available commands',
   usernameUndefined: name => `Hello ${name}! We can't start working sorry. This is because you haven't ` +

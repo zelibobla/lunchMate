@@ -1,8 +1,10 @@
 start - register with bot and set up basic settings
 create_template - setup the template of a roundabout message
-create_list - сreate list of users for roundabout
-delete_list - delete list of users
-show_lists - show current lists of users
+show_templates - show templates
+delete_template - delete template
+create_list - сreate list of mates for roundabout
+delete_list - delete list of mates
+show_lists - show current lists of mates
 run - broadcast the invitation to the lunch
 stop - immediately stop roundabout polling
 help - see the list of possible commands

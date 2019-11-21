@@ -19,7 +19,7 @@ describe(`Lists controller`, () => {
         },
       };
       const output = await listsController.create.pipe[2](input);
-      expect(output.user.state.route).toBe('/create_list_typed');
+      expect(output.user.state.route).toBe('/list_name');
       const params = { inline_keyboard: [[
         { callback_data: "/list_name?list_name=default", text: "Skip" }
       ]]};

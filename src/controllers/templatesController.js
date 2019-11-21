@@ -175,25 +175,47 @@ module.exports = {
     route: '/delete_template',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      async input => await templateMiddleware.ifNoTemplates(input, messages.noTemplatesToDelete),
       async input => {
         const output = JSON.parse(JSON.stringify(input));
-        if (!output.user) {
-          return await chatMiddleware.sendMessage(output.chatId, messages.registerFirst);
+        if (output.user.templates.length === 1) {
+          return await chatMiddleware.sendMessage(input.chatId, messages.oneTemplateShouldStay);
         }
-        if (!output.query_params ||
-          !output.query_params.template_index ||
-          !output.user.templates ||
-          !output.user.templates[output.query_params.template_index]) {
-          return await chatMiddleware.sendMessage(output.chatId, messages.templateNotFound);
-        }
-        const [ template ] = output.user.templates.splice(output.query_params.template_index, 1);
+        const templatesOptions = output.user.templates.map(t => ([{
+          text: t.name,
+          callback_data: `/delete_template_typed?template_name=${t.name.toLowerCase()}`
+        }]));
         await Promise.all([
-          db.upsert(output.user.username, output.user, 'users'),
-          chatMiddleware.sendMessage(output.chatId, messages.templateDeleted(template)),
+          chatMiddleware.sendMessage(
+            input.chatId,
+            messages.chooseTemplateToDelete,
+            { inline_keyboard: templatesOptions },
+          )
         ]);
-        delete output.query_params.template_index;
-        await dispatch('/run', output);
+        return output;
+      }
+    ],
+  },
+  deleteTyped: {
+    route: '/delete_template_typed',
+    pipe: [
+      chatMiddleware.defineChatId,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
+      async input => await templateMiddleware.ifNoTemplates(input, messages.noTemplatesToDelete),
+      async input => {
+        const output = JSON.parse(JSON.stringify(input));
+        const name = output.query_params.template_name;
+        if (output.user.templates.length === 1) {
+          return await chatMiddleware.sendMessage(input.chatId, messages.oneTemplateShouldStay);
+        }
+        output.user.templates = output.user.templates.filter(l => l.name.toLowerCase() !== name);
+        output.user.state = {};
+        await Promise.all([
+          chatMiddleware.sendMessage(input.chatId, messages.templateDeleted(name)),
+          db.upsert(output.user.username, output.user, 'users'),
+        ]);
+        return output;
       }
     ],
   },

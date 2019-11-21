@@ -12,7 +12,7 @@ module.exports = {
       async input => await userMiddleware.defineUser(input, messages.registerFirst),
       async input => {
         const output = JSON.parse(JSON.stringify(input));
-        output.user.state = { route: '/create_list_typed' };
+        output.user.state = { route: '/list_name' };
         await Promise.all([
           chatMiddleware.sendMessage(
             input.chatId,
