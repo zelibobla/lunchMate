@@ -13,13 +13,13 @@ describe(`Mates controller`, () => {
     test(`If list to add mates defined route should be pushed`, async () => {
       const input = {
         chatId: 1,
-        user: { username: 'user', lists: [{ name: 'default', mates: [] }] }, 
+        user: { id: 1, username: 'user', lists: [{ name: 'default', mates: [] }] }, 
         list: { name: 'default', mates: []},
       };
       const output = await matesController.add.pipe[4](input);
       expect(output.user.state).toStrictEqual({ route: '/add_user_typed', listName: 'default' });
       expect(chat.sendMessage).toHaveBeenCalledWith(output.chatId, messages.addUserToOneList('default'));
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
     });
     test(`If several lists, should prompt to choose`, async () => {
       const lists = [
@@ -28,13 +28,13 @@ describe(`Mates controller`, () => {
       ];
       const input = {
         chatId: 1,
-        user: { username: 'user', lists }, 
+        user: { id: 1, username: 'user', lists },
         message: { text: 'mate' },
       };
       const output = await matesController.add.pipe[4](input);
       expect(output.user.state).toStrictEqual({ route: '/add_user_choose_list' });
       expect(chat.sendMessage).toHaveBeenCalledWith(output.chatId, messages.addUserChooseList(lists));
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
     });
   });
 
@@ -42,7 +42,7 @@ describe(`Mates controller`, () => {
     test(`Should set the list if typed correctly`, async () => {
       const input = {
         chatId: 1,
-        user: { username: 'user', lists: [{ name: 'default', mates: [] }] },
+        user: { id: 1, first_name: 'user', lists: [{ name: 'default', mates: [] }] },
         message: { text: 'default' },
         list: { name: 'default', mates: [] },
       };
@@ -55,7 +55,14 @@ describe(`Mates controller`, () => {
   describe(`/add_user_typed route`, () => {
     test(`Should add user into defined list`, async () => {
       const list = { name: 'default', mates: [] };
-      const mate = { username: 'mate', chat_id: 123123 };
+      const mate = {
+        id: 2,
+        first_name: 'Bob',
+        last_name: 'Dilan',
+        phone: '78008008008',
+        username: 'mate',
+        chat_id: 123123,
+      };
       const input = {
         chatId: 1,
         user: {
@@ -69,7 +76,11 @@ describe(`Mates controller`, () => {
       const output = await matesController.addUserTyped.pipe[4](input);
       expect(output.user.lists[0].mates).toStrictEqual([mate]);
       const inlineKeyboard = { inline_keyboard: [[{ text: 'Run', callback_data: '/run' }]] };
-      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.added('mate', output.user.lists[0]), inlineKeyboard );
+      expect(chat.sendMessage).toHaveBeenCalledWith(
+        input.chatId,
+        messages.added(mate.first_name, output.user.lists[0]),
+        inlineKeyboard,
+      );
     });
   });
 });

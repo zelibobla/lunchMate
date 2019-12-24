@@ -50,7 +50,7 @@ describe(`UserMiddleware`, () => {
       }
     });
     test(`Should find the user query_params valid`, async () => {
-      const user = { username: 'user' };
+      const user = { id: 1 };
       db.get = jest.fn().mockReturnValue(Promise.resolve(user));
       const input = { query_params: user };
       const output = await middleware.defineUserFromQuery(input, errorMessage);

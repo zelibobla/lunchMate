@@ -23,7 +23,7 @@ module.exports = {
               callback_data: `/template_name?template_name=default`,
             }]]
           }),
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       },
@@ -45,7 +45,7 @@ module.exports = {
         output.user.templates.push(template);
         output.user.state = { route: '/template_eat_place', templateName: template.name };
         await Promise.all([
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
           chatMiddleware.sendMessage(
             output.chatId,
             messages.typeEatPlace,
@@ -73,7 +73,7 @@ module.exports = {
           : output.message.text;
         output.user.state = { route: '/template_meet_place', templateName: template.name };
         await Promise.all([
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
           chatMiddleware.sendMessage(
             output.chatId,
             messages.typeMeetPlace,
@@ -101,7 +101,7 @@ module.exports = {
           : output.message.text;
         output.user.state = { route: '/template_delay', templateName: template.name };
         await Promise.all([
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
           chatMiddleware.sendMessage(
             output.chatId,
             messages.typeDelay,
@@ -129,7 +129,7 @@ module.exports = {
           : output.message.text;
         output.user.state = { route: '/template_timeout', templateName: template.name };
         await Promise.all([
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
           chatMiddleware.sendMessage(
             output.chatId,
             messages.typeTimeout,
@@ -157,10 +157,10 @@ module.exports = {
           : output.message.text;
         output.user.state = {};
         await Promise.all([
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
           chatMiddleware.sendMessage(
             output.chatId,
-            messages.templateCreated(output.user.username, template),
+            messages.templateCreated(output.user.first_name, template),
             { inline_keyboard: [[{
               text: 'Run',
               callback_data: `/run`,
@@ -213,7 +213,7 @@ module.exports = {
         output.user.state = {};
         await Promise.all([
           chatMiddleware.sendMessage(input.chatId, messages.templateDeleted(name)),
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       }

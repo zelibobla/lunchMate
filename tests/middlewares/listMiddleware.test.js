@@ -34,10 +34,10 @@ describe(`ListMiddleware`, () => {
     }
   });
   test(`normalizeUserLists: If no lists, default should be created`, async () => {
-    const input = { user: { username: 'user' }, message: { text: 'mate' } };
+    const input = { user: { id: 1, username: 'user' }, message: { text: 'mate' } };
     const output = await middleware.normalizeUserLists(input);
     expect(output.user.lists).toStrictEqual([{ name: 'default' }]);
-    expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+    expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
   });
   test(`defineListToAddMates: If only one list, should choose it`, async () => {
     const list = { name: 'default', mates: [] };

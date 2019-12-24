@@ -5,21 +5,21 @@ const telegram = require('../services/telegramService.js');
 const messages = require('../configs/messages.js');
 
 const processInvitation = async function(row) {
-  const user = await db.get('username', row.username, 'users');
+  const user = await db.get('id', row.id, 'users');
   const invitation = user.invitations.find(i => i.is_active);
   if (!invitation) {
     /** @TODO warn input inconsistency here */
-    return await db.delete(row.username, 'invitations');
+    return await db.delete(row.id, 'invitations');
   }
   const mate = invitation.list.mates.find(m => !m.is_accepted && !m.is_declined);
   if (!mate) {
     invitation.is_active = false;
     return await Promise.all([
-      db.delete(row.username, 'invitations'),
-      db.upsert(row.username, user, 'users'),
+      db.delete(row.id, 'invitations'),
+      db.upsert(row.id, user, 'users'),
       telegram.send('sendMessage', {
         chat_id: user.chat_id,
-        text: messages.listEnded(user.username),
+        text: messages.listEnded(user.first_name),
       }),
     ]);
   }
@@ -29,21 +29,21 @@ const processInvitation = async function(row) {
       return;
     } else {
       mate.is_declined = true;
-      await db.upsert(row.username, user, 'users');
+      await db.upsert(row.id, user, 'users');
       return await processInvitation(row);
     }
   }
   await telegram.send('sendMessage', {
     chat_id: mate.chat_id,
-    text: messages.invitePending(user.username, mate.username, invitation),
+    text: messages.invitePending(`${user.first_name} ${user.last_name}`, mate.first_name, invitation),
     reply_markup: { inline_keyboard: [
       [
-        { text: 'Yes', callback_data: `/accept?username=${user.username}` },
-        { text: 'No', callback_data: `/decline?username=${user.username}` },
+        { text: 'Yes', callback_data: `/accept?id=${user.id}` },
+        { text: 'No', callback_data: `/decline?id=${user.id}` },
       ]
     ]}});
   mate.asked_at = +(new Date());
-  await db.upsert(row.username, user, 'users');
+  await db.upsert(row.id, user, 'users');
 }
 
 module.exports = {
@@ -51,7 +51,7 @@ module.exports = {
     route: '/accept',
     pipe: [
       chatMiddleware.defineChatId,
-      input => userMiddleware.defineUser(input, messages.mateNotFound(input.from.username)),
+      input => userMiddleware.defineUser(input, messages.mateNotFound(input.from.first_name)),
       input => userMiddleware.defineUserFromQuery(input, messages.invalidQueryParams(input.query_params)),
       async input => {
         const output = JSON.parse(JSON.stringify(input));
@@ -61,23 +61,29 @@ module.exports = {
         if (!invitation) {
           await Promise.all([
             chatMiddleware.sendMessage(output.chatId, messages.invitationNotFound),
-            db.delete(user.username, 'invitations'),
+            db.delete(user.id, 'invitations'),
           ]);
           return output;
         }
-        const mate = invitation.list.mates.find(m => m.username === foundMate.username);
+        const mate = invitation.list.mates.find(m => m.id === foundMate.id);
         if (!mate || mate.is_declined) {
-          await chatMiddleware.sendMessage(output.chatId, messages.listNotFound(user.username));
+          await chatMiddleware.sendMessage(output.chatId, messages.listNotFound(user.first_name));
           return output;
         }
         mate.is_accepted = true;
         invitation.is_active = false;
         await Promise.all([
-          db.upsert(user.username, user, 'users'),
-          chatMiddleware.sendMessage(output.chatId, messages.youAccepted(user.username, foundMate.username)),
+          db.upsert(user.id, user, 'users'),
+          chatMiddleware.sendMessage(
+            output.chatId,
+            messages.youAccepted(`${user.first_name} ${user.last_name}`, foundMate.first_name),
+          ),
           telegram.send('sendMessage', {
             chat_id: user.chat_id,
-            text: messages.yourInvitationAccepted(user.username, foundMate.username),
+            text: messages.yourInvitationAccepted(
+              user.first_name,
+              `${foundMate.first_name} ${foundMate.last_name}`,
+            ),
           }),
         ]);
         return output;
@@ -89,36 +95,35 @@ module.exports = {
     pipe: [
       chatMiddleware.defineChatId,
       async (input, redispatch) => {
-        const mateUsername = input.from.username;
-        const foundMate = await db.get('username', mateUsername, 'users');
+        const foundMate = await db.get('id', input.from.id, 'users');
         if (!foundMate) {
           /** @TODO warn input inconsistency here */
-          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(mateUsername));
+          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(input.from.id));
         }
         if (!input.query_params ||
-          !input.query_params.username) {
+          !input.query_params.id) {
             /** @TODO warn input inconsistency here */
-          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(username));
+          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotSpecified());
         }
-        const user = await db.get('username', input.query_params.username, 'users');
+        const user = await db.get('id', input.query_params.id, 'users');
         if (!user) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(username));
+          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(input.query_params.id));
         }
         const invitation = user.invitations.find(i => i.is_active);
         if (!invitation) {
           return await Promise.all([
             chatMiddleware.sendMessage(input.chatId, messages.invitationNotFound),
-            db.delete(user.username, 'invitations'),
+            db.delete(user.id, 'invitations'),
           ]);
         }
-        const mate = invitation.list.mates.find(m => m.username === foundMate.username);
+        const mate = invitation.list.mates.find(m => m.id === foundMate.id);
         if (!mate || mate.is_accepted) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.listNotFound(user.username));
+          return await chatMiddleware.sendMessage(input.chatId, messages.listNotFound(user.first_name));
         }
         mate.is_declined = true;
         await Promise.all([
-          db.upsert(user.username, user, 'users'),
-          chatMiddleware.sendMessage(input.chatId, messages.youDeclined(user.username, foundMate.username)),
+          db.upsert(user.id, user, 'users'),
+          chatMiddleware.sendMessage(input.chatId, messages.youDeclined(user.first_name, foundMate.first_name)),
         ]);
         await redispatch('/process_invitations');
       }
@@ -143,9 +148,9 @@ module.exports = {
           return await chatMiddleware.sendMessage(input.chatId, messages.registerFirst);
         }
         const { user } = input;
-        const { username } = user;
+        const { first_name, id } = user;
         if (!user.lists || !user.lists.length) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.emptyList(username));
+          return await chatMiddleware.sendMessage(input.chatId, messages.emptyList(first_name));
         }
         const query = input.query_params;
         let listIndex;
@@ -158,9 +163,13 @@ module.exports = {
             text: l.name,
             callback_data: `/run?list_index=${index}`,
           }]));
-          return await chatMiddleware.sendMessage(input.chatId, messages.chooseList, { inline_keyboard: listsOptions });
+          return await chatMiddleware.sendMessage(
+            input.chatId,
+            messages.chooseList,
+            { inline_keyboard: listsOptions },
+          );
         }
-        const activeInvitation = await db.get('username', username, 'invitations');
+        const activeInvitation = await db.get('id', id, 'invitations');
         if (activeInvitation) {
           return await chatMiddleware.sendMessage(input.chatId, messages.alreadyRunning);
         }
@@ -180,11 +189,12 @@ module.exports = {
           const templatesOptions = user.templates.map((t, index) => ([{
             text: messages.templateBrief(t),
             callback_data: `/run?template_index=${index}`,
-          }, {
-            text: 'x',
-            callback_data: `/delete_template?template_index=${index}`
           }]));
-          return await chatMiddleware.sendMessage(input.chatId, messages.chooseTemplate, { inline_keyboard: templatesOptions });
+          return await chatMiddleware.sendMessage(
+            input.chatId,
+            messages.chooseTemplate,
+            { inline_keyboard: templatesOptions },
+          );
         }
         const template = user.templates[templateIndex];
         const list = user.lists[listIndex];
@@ -201,10 +211,10 @@ module.exports = {
         };
         user.invitations.push(invitation);
         await Promise.all([
-          db.upsert(username, { username }, 'invitations'),
-          db.upsert(username, user, 'users'),
+          db.upsert(id, { id }, 'invitations'),
+          db.upsert(id, user, 'users'),
         ]);
-        await chatMiddleware.sendMessage(input.chatId, messages.run(username, invitation));
+        await chatMiddleware.sendMessage(input.chatId, messages.run(first_name, invitation));
         await redispatch('/process_invitations');
       }
     ],
@@ -214,8 +224,8 @@ module.exports = {
     pipe: [
       chatMiddleware.defineChatId,
       async input => {
-        const { username } = input.message.from;
-        const user = await db.get('username', username, 'users');
+        const { id } = input.message.from;
+        const user = await db.get('id', id, 'users');
         if (!user) {
           return await chatMiddleware.sendMessage(input.chatId, messages.nothingToStop);
         }
@@ -223,13 +233,13 @@ module.exports = {
         if (!invitation) {
           return Promise.all([
             chatMiddleware.sendMessage(input.chatId, messages.nothingToStop),
-            db.delete(user.username, 'invitations'),
+            db.delete(user.id, 'invitations'),
           ]);
         }
         invitation.is_active = false;
         await Promise.all([
-          db.delete(user.username, 'invitations'),
-          db.upsert(user.username, user, 'users'),
+          db.delete(user.id, 'invitations'),
+          db.upsert(user.id, user, 'users'),
           telegram.send('sendMessage', {
             chat_id: user.chat_id,
             text: messages.stopped,

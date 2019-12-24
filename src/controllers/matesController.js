@@ -18,14 +18,14 @@ module.exports = {
           output.user.state = { route: '/add_user_typed', listName: output.list.name };
           await Promise.all([
             chatMiddleware.sendMessage(output.chatId, messages.addUserToOneList(output.list.name)),
-            db.upsert(output.user.username, output.user, 'users'),
+            db.upsert(output.user.id, output.user, 'users'),
           ]);
           return output;
         }
         output.user.state = { route: '/add_user_choose_list' };
         await Promise.all([
           chatMiddleware.sendMessage(output.chatId, messages.addUserChooseList(output.user.lists)),
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       }
@@ -46,7 +46,7 @@ module.exports = {
         output.user.state = { route: '/add_user_typed', listName: output.list.name };
         await Promise.all([
           chatMiddleware.sendMessage(output.chatId, messages.addUserToList(output.list.name)),
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       }
@@ -68,13 +68,20 @@ module.exports = {
         if (!list.mates) {
           list.mates = [];
         }
-        if (!list.mates.find(u => u.username === output.mate.username)) {
-          list.mates.push({ username: output.mate.username, chat_id: output.mate.chat_id });
-          await db.upsert(output.user.username, output.user, 'users');
+        if (!list.mates.find(u => u.id === output.mate.id)) {
+          list.mates.push({
+            id: output.mate.id,
+            chat_id: output.mate.chat_id,
+            first_name: output.mate.first_name,
+            last_name: output.mate.last_name,
+            phone: output.mate.phone,
+            username: output.mate.username,
+          });
+          await db.upsert(output.user.id, output.user, 'users');
         }
         await chatMiddleware.sendMessage(
           output.chatId,
-          messages.added(output.mate.username, list),
+          messages.added(output.mate.first_name, list),
           { inline_keyboard: [[{ text: 'Run', callback_data: '/run' }]] },
         );
         return output;

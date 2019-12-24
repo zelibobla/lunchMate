@@ -7,8 +7,8 @@ module.exports = {
     if (output.user) {
       return output;
     }
-    const { username } = output.message.from;
-    const user = await db.get('username', username, 'users');
+    const { id } = output.message.from;
+    const user = await db.get('id', id, 'users');
     if (!user && message) {
       throw new UserInputError(message);
     }
@@ -18,10 +18,10 @@ module.exports = {
   defineUserFromQuery: async (input, message) => {
     const output = JSON.parse(JSON.stringify(input));
     if (!output.query_params ||
-      !output.query_params.username) {
+      !output.query_params.id) {
       throw new UserInputError(message);
     }
-    const user = await db.get('username', input.query_params.username, 'users');
+    const user = await db.get('id', +input.query_params.id, 'users');
     if (!user) {
       throw new UserInputError(message);
     }
@@ -30,8 +30,11 @@ module.exports = {
   },
   defineUserFromTyped: async (input, message) => {
     const output = JSON.parse(JSON.stringify(input));
-    const term = output.message.text.replace(/^@/, '').toLowerCase();
-    output.mate = await db.get('username', term, 'users');
+    const usernameTerm = output.message.text.replace(/^@/, '').toLowerCase();
+    const usernameMatch = await db.get('username', usernameTerm, 'users');
+    const phoneTerm = output.message.text.replace(/[^\d]/, '').replace(/^8/, '7');
+    const phoneMatch = await db.get('phone', phoneTerm, 'users');
+    output.mate = usernameMatch || phoneMatch;
     if (!output.mate) {
       throw new UserInputError(message);
     }
@@ -40,13 +43,6 @@ module.exports = {
   ifBot: async (input, message) => {
     const output = JSON.parse(JSON.stringify(input));
     if (input.message.from.is_bot) {
-      throw new UserInputError(message);
-    }
-    return output;
-  },
-  ifNoUsername: async (input, message) => {
-    const output = JSON.parse(JSON.stringify(input));
-    if (!input.message.from.username) {
       throw new UserInputError(message);
     }
     return output;

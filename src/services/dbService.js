@@ -3,16 +3,24 @@ const documentClient = new AWS.DynamoDB.DocumentClient({ 'region': 'us-east-2' }
 
 const get = (key, value, table) => {
   if (!table) throw 'table needed';
-  if (typeof key !== 'string') throw `key was not string and was ${JSON.stringify(key)} on table ${table}`;
-  if (typeof value !== 'string') throw `value was not string and was ${JSON.stringify(value)} on table ${table}`;
   return new Promise((resolve, reject) => {
     let params = { TableName: table, Key: { [key]: value } };
-    documentClient.get(params, function(err, data) {    
-      if (err) {        
+    let method = 'get';
+    if (key !== 'id') {
+      params['IndexName'] = `${key}-index`;
+      params['KeyConditionExpression'] = `${key} = :val`;
+      params['Select'] ='ALL_PROJECTED_ATTRIBUTES';
+      params['ExpressionAttributeValues'] = { ':val' : value };
+      delete params.Key;
+      method = 'query';
+    }
+    documentClient[method](params, function(err, data) {    
+      if (err) {
         console.log(`There was an error fetching the data for ${key} ${value} on table ${table}`, err);
         return reject(err);
       }
-      return resolve(data.Item);
+      const item = data.Items ? data.Items[0] : data.Item;
+      return resolve(item);
     });
   })
 }
@@ -34,13 +42,14 @@ const getAll = (params, table) => {
   });
 }
 
-const upsert = (key, data, table, force = true) => {
+const upsert = (id, data, table, force = true) => {
   return new Promise((resolve, reject) => {
-    if (typeof key !== 'string') return reject(`the id must be a string and not ${key}`);
+    if (typeof id !== 'number') return reject(`the id must be a number and not ${typeof id}`);
     if (!data) return reject('data is needed');
     if (!table) return reject('table name is needed');
     const forceUpsert = () => {
-      const params = { TableName: table, Item: { ...data, id: key } };
+      const params = { TableName: table, Item: { ...data, id } };
+      console.log('Force upsert:', params);
       documentClient.put(params, function(err, result) {
         if (err) {
           console.log("Err in writeForCall writing messages to dynamo:", err);
@@ -50,7 +59,7 @@ const upsert = (key, data, table, force = true) => {
       });
     }
     if (!force) {
-      get('username', key, table).then(result => {
+      get('id', id, table).then(result => {
         if (result) {
           return resolve(result);
         } else {
@@ -65,11 +74,11 @@ const upsert = (key, data, table, force = true) => {
   });
 }
 
-const del = (username, table) => {
+const del = (id, table) => {
   return new Promise((resolve, reject) => {
-    if (typeof username !== 'string') throw `the id must be a string and not ${username}`;
+    if (typeof id !== 'number') throw `the id must be a number and not ${id}`;
     if (!table) throw 'table name is needed';
-    let params = { TableName: table, Key: { username } };
+    let params = { TableName: table, Key: { id } };
     documentClient.delete(params, function(err, result) {
       if (err) {
         console.log("Err in writeForCall writing messages to dynamo:", err);

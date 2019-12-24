@@ -15,7 +15,7 @@ module.exports = {
         output.user.state = { route: '/list_name' };
         await Promise.all([
           chatMiddleware.sendMessage(
-            input.chatId,
+            output.chatId,
             messages.createList,
             { inline_keyboard: [[{
                 text: 'Skip',
@@ -23,7 +23,7 @@ module.exports = {
               }]]
             }
           ),
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       }
@@ -42,7 +42,7 @@ module.exports = {
         output.user.state = { route: '/add_user_typed', listName: output.listName };
         await Promise.all([
           chatMiddleware.sendMessage(input.chatId, messages.listCreated(output.listName)),
-          db.upsert(output.user.username, output.user, 'users'),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       }
@@ -57,7 +57,7 @@ module.exports = {
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         if (output.user.lists.length === 1) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.oneListShouldStay);
+          return await chatMiddleware.sendMessage(output.chatId, messages.oneListShouldStay);
         }
         const listsOptions = output.user.lists.map(l => ([{
           text: l.name,
@@ -65,7 +65,7 @@ module.exports = {
         }]));
         await Promise.all([
           chatMiddleware.sendMessage(
-            input.chatId,
+            output.chatId,
             messages.chooseListToDelete,
             { inline_keyboard: listsOptions },
           )
@@ -84,13 +84,13 @@ module.exports = {
         const output = JSON.parse(JSON.stringify(input));
         const name = output.query_params.list_name;
         if (output.user.lists.length === 1) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.oneListShouldStay);
+          return await chatMiddleware.sendMessage(output.chatId, messages.oneListShouldStay);
         }
         output.user.lists = output.user.lists.filter(l => l.name.toLowerCase() !== name);
         output.user.state = {};
         await Promise.all([
-          chatMiddleware.sendMessage(input.chatId, messages.listDeleted(name)),
-          db.upsert(output.user.username, output.user, 'users'),
+          chatMiddleware.sendMessage(output.chatId, messages.listDeleted(name)),
+          db.upsert(output.user.id, output.user, 'users'),
         ]);
         return output;
       }

@@ -11,32 +11,35 @@ describe(`Users controller`, () => {
   });
 
   describe(`/start route`, () => {
-    test(`Should create user and send message`, async () => {
+    test(`Should ask user phone`, async () => {
       const input = {
-        message: { from: { chatId: 1, username: 'user' } },
+        message: { from: { chatId: 1, first_name: 'user', id: 1 } },
       };
-      const output = await usersController.create.pipe[3](input);
-      const inlineKeyboard = {"inline_keyboard": [[{"callback_data": "/create_list", "text": "Yes"}]]};
+      const output = await usersController.create.pipe[2](input);
+      const inlineKeyboard = {
+        keyboard: [[{ text: 'Show phone', request_contact: true, callback_data: '/start' }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      };
       expect(chat.sendMessage).toHaveBeenCalledWith(
         output.chatId,
-        messages.start(output.message.from.username),
+        messages.askPhone(output.message.from.first_name),
         inlineKeyboard,
       );
-      expect(db.upsert).toHaveBeenCalledWith(output.message.from.username, output.message.from, 'users', false);
     });
   });
 
   describe(`/delete route`, () => {
     test(`Should delete user and send message`, async () => {
       const input = {
-        message: { chat: { first_name: 'user' }, from: { chatId: 1, username: 'user' } },
+        message: { chat: { first_name: 'user' }, from: { id: 1, chatId: 1, username: 'user' } },
       };
       const output = await usersController.delete.pipe[1](input);
       expect(chat.sendMessage).toHaveBeenCalledWith(
         output.chatId,
-        messages.delete(output.message.from.username),
+        messages.delete(output.message.from.first_name),
       );
-      expect(db.delete).toHaveBeenCalledWith(output.message.from.username, 'users');
+      expect(db.delete).toHaveBeenCalledWith(output.message.from.id, 'users');
     });
   });
 

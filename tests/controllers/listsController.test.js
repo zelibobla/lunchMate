@@ -42,7 +42,7 @@ describe(`Lists controller`, () => {
       expect(output.user.state).toStrictEqual({ listName: 'unique', route: '/add_user_typed' });
       expect(output.user.lists).toStrictEqual([{name: 'default', mates: []}, {name: 'unique', mates: []}]);
       expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.listCreated('unique'));
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
     });
   });
 

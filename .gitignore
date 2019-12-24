@@ -1,4 +1,5 @@
 telegram.secret.js
+db.secret.js
 botServer.zip
 node_modules
 coverage

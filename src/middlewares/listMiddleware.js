@@ -6,7 +6,7 @@ module.exports = {
     const output = JSON.parse(JSON.stringify(input));
     if (!output.user.lists) {
       output.user.lists = [{ name: 'default'}];
-      await db.upsert(output.user.username, output.user, 'users');
+      await db.upsert(output.user.id, output.user, 'users');
     }
     return output;
   },

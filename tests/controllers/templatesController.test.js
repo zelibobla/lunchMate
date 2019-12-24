@@ -11,10 +11,10 @@ describe(`Templates controller`, () => {
 
   describe(`/create_template route`, () => {
     test(`Should set /template_name route in the state`, async () => {
-      const input = { chatId: 1, user: { username: 'user' } };
+      const input = { id: 1, chatId: 1, user: { username: 'user' } };
       const output = await templatesController.create.pipe[2](input);
       expect(output.user.state.route).toBe('/template_name');
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
       const skipOption = { inline_keyboard: [[{
         text: 'Skip',
         callback_data: `/template_name?template_name=default`,
@@ -25,10 +25,10 @@ describe(`Templates controller`, () => {
 
   describe(`/template_name route`, () => {
     test(`Should save typed name and set /template_eat_place route in the state`, async () => {
-      const input = { chatId: 1, user: { username: 'user', templates: [] } };
+      const input = { id: 1, chatId: 1, user: { username: 'user', templates: [] } };
       const output = await templatesController.setName.pipe[4](input);
       expect(output.user.state.route).toBe('/template_eat_place');
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
       const skipOption = { inline_keyboard: [[{
         text: 'Skip',
         callback_data: `/template_eat_place?template_eat_place=our%20common%20place`,
@@ -41,6 +41,7 @@ describe(`Templates controller`, () => {
     test(`Should add template and set /template_eat_place route in the state`, async () => {
       const template = { name: 'default' };
       const input = {
+        id: 1, 
         chatId: 1,
         user: { username: 'user', templates: [template], state: {} },
         message: { text: 'My Eat Place' },
@@ -49,7 +50,7 @@ describe(`Templates controller`, () => {
       const output = await templatesController.setEatPlace.pipe[3](input);
       expect(output.user.state.route).toBe('/template_meet_place');
       expect(output.user.templates[0].eat_place).toBe('My Eat Place');
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
       const skipOption = { inline_keyboard: [[{
         text: 'Skip',
         callback_data: `/template_meet_place?template_meet_place=as%20always`,
@@ -63,14 +64,14 @@ describe(`Templates controller`, () => {
       const template = { name: 'default' };
       const input = {
         chatId: 1,
-        user: { username: 'user', templates: [template], state: {} },
+        user: { id: 1, username: 'user', templates: [template], state: {} },
         message: { text: 'My Meet Place' },
         template,
       };
       const output = await templatesController.setMeetPlace.pipe[3](input);
       expect(output.user.state.route).toBe('/template_delay');
       expect(output.user.templates[0].meet_place).toBe('My Meet Place');
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
       const skipOption = { inline_keyboard: [[{
         text: 'Skip',
         callback_data: `/template_delay?template_delay=5`,
@@ -84,14 +85,14 @@ describe(`Templates controller`, () => {
       const template = { name: 'default' };
       const input = {
         chatId: 1,
-        user: { username: 'user', templates: [template], state: {} },
+        user: { id: 1, username: 'user', templates: [template], state: {} },
         message: { text: '3' },
         template,
       };
       const output = await templatesController.setDelay.pipe[3](input);
       expect(output.user.state.route).toBe('/template_timeout');
       expect(output.user.templates[0].delay).toBe('3');
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
       const skipOption = { inline_keyboard: [[{
         text: 'Skip',
         callback_data: `/template_timeout?template_timeout=1`,
@@ -105,18 +106,18 @@ describe(`Templates controller`, () => {
       const template = { name: 'default' };
       const input = {
         chatId: 1,
-        user: { username: 'user', templates: [template], state: {} },
+        user: { id: 1, first_name: 'user', templates: [template], state: {} },
         message: { text: '5' },
         template,
       };
       const output = await templatesController.setTimeout.pipe[3](input);
       expect(output.user.state).toStrictEqual({});
       expect(output.user.templates[0].timeout).toBe('5');
-      expect(db.upsert).toHaveBeenCalledWith(output.user.username, output.user, 'users');
+      expect(db.upsert).toHaveBeenCalledWith(output.user.id, output.user, 'users');
       const inlineKeyboard = { inline_keyboard: [[{ text: 'Run', callback_data: `/run` }]]};
       expect(chat.sendMessage).toHaveBeenCalledWith(
         input.chatId,
-        messages.templateCreated(input.user.username, { timeout: 5 }),
+        messages.templateCreated(input.user.first_name, { timeout: 5 }),
         inlineKeyboard,
       );
     });
