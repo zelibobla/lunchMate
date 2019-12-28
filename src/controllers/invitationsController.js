@@ -51,8 +51,8 @@ module.exports = {
     route: '/accept',
     pipe: [
       chatMiddleware.defineChatId,
-      input => userMiddleware.defineUser(input, messages.mateNotFound(input.from.first_name)),
-      input => userMiddleware.defineUserFromQuery(input, messages.invalidQueryParams(input.query_params)),
+      async input => await userMiddleware.defineUser(input, messages.mateNotFound(input.from.first_name)),
+      async input => await userMiddleware.defineUserFromQuery(input, messages.invalidQueryParams(input.query_params)),
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         const foundMate = output.user;
@@ -94,31 +94,22 @@ module.exports = {
     route: '/decline',
     pipe: [
       chatMiddleware.defineChatId,
+      async input => await userMiddleware.defineUser(input, messages.mateNotFound(input.from.first_name)),
+      async input => await userMiddleware.defineUserFromQuery(input, messages.invalidQueryParams(input.query_params)),
       async (input, redispatch) => {
-        const foundMate = await db.get('id', input.from.id, 'users');
-        if (!foundMate) {
-          /** @TODO warn input inconsistency here */
-          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(input.from.id));
-        }
-        if (!input.query_params ||
-          !input.query_params.id) {
-            /** @TODO warn input inconsistency here */
-          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotSpecified());
-        }
-        const user = await db.get('id', input.query_params.id, 'users');
-        if (!user) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.mateNotFound(input.query_params.id));
-        }
+        const output = JSON.parse(JSON.stringify(input));
+        const foundMate = output.user;
+        const user = output.queryUser;
         const invitation = user.invitations.find(i => i.is_active);
         if (!invitation) {
           return await Promise.all([
-            chatMiddleware.sendMessage(input.chatId, messages.invitationNotFound),
+            chatMiddleware.sendMessage(output.chatId, messages.invitationNotFound),
             db.delete(user.id, 'invitations'),
           ]);
         }
         const mate = invitation.list.mates.find(m => m.id === foundMate.id);
         if (!mate || mate.is_accepted) {
-          return await chatMiddleware.sendMessage(input.chatId, messages.listNotFound(user.first_name));
+          return await chatMiddleware.sendMessage(output.chatId, messages.listNotFound(user.first_name));
         }
         mate.is_declined = true;
         await Promise.all([
@@ -142,7 +133,7 @@ module.exports = {
     route: '/run',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
       async (input, redispatch) => {
         if (!input.user) {
           return await chatMiddleware.sendMessage(input.chatId, messages.registerFirst);

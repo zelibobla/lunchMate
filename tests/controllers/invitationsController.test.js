@@ -82,40 +82,43 @@ describe(`Invitations controller`, () => {
 
   describe(`/decline route`, () => {
     test(`Should claim if mate has already accepted the invitation`, async () => {
+      const mate = { id: 2, username: 'mate', is_accepted: true };
+      const user = {
+        id: 1,
+        username: 'user',
+        invitations: [{
+          is_active: true,
+          list: { name: 'default', mates: [mate] }
+        }]
+      };
       db.get = jest.fn()
         .mockReturnValueOnce(Promise.resolve({ id: 1 }))
-        .mockReturnValueOnce(Promise.resolve({
-          id: 1,
-          username: 'user',
-          invitations: [{
-            is_active: true,
-            list: { name: 'default', mates: [{ username: 'mate', is_accepted: true }] }
-          }]
-        },
-      ));
-      const input = { chatId: 1, from: { username: 'mate' }, query_params: { id: 1 } };
-      await invitationsController.decline.pipe[1](input);
-      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.listNotFound(input.query_params.username));
+        .mockReturnValueOnce(Promise.resolve(user));
+      const input = { chatId: 1, user: mate, queryUser: user };
+      await invitationsController.decline.pipe[3](input);
+      expect(chat.sendMessage).toHaveBeenCalledWith(input.chatId, messages.listNotFound(input.query_params));
     });
     test(`Should report after the invitation declined and redispatch to '/process_invitations' route`, async () => {
+      const mate = { id: 2, username: 'mate', first_name: 'Steve' };
       const user = {
         id: 1, 
         first_name: 'Bob',
         invitations: [{
           is_active: true,
-          list: { name: 'default', mates: [{ username: 'mate' }] },
+          list: { name: 'default', mates: [mate] },
         }]
       };
       db.get = jest.fn()
-        .mockReturnValueOnce(Promise.resolve({ username: 'mate', first_name: 'Steve' }))
+        .mockReturnValueOnce(Promise.resolve(mate))
         .mockReturnValueOnce(Promise.resolve(user));
       const redispatch = jest.fn();
-      const input = { chatId: 1, from: { id: 2, first_name: 'Steve' }, query_params: { id: 1 } };
-      await invitationsController.decline.pipe[1](input, redispatch);
+      const input = { chatId: 1, user: mate, queryUser: user };
+      await invitationsController.decline.pipe[3](input, redispatch);
       expect(chat.sendMessage).toHaveBeenCalledWith(
         input.chatId,
-        messages.youDeclined(user.first_name, input.from.first_name)
+        messages.youDeclined(user.first_name, input.user.first_name)
       );
+      mate.is_declined = true;
       expect(db.upsert).toHaveBeenCalledWith(user.id, user, 'users');
       expect(redispatch).toHaveBeenCalledWith('/process_invitations');
     });

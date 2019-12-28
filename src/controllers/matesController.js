@@ -9,7 +9,7 @@ module.exports = {
     route: '/add_user',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
       listMiddleware.normalizeUserLists,
       listMiddleware.defineListToAddMates,
       async input => {
@@ -35,7 +35,7 @@ module.exports = {
     route: '/add_user_choose_list',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
       listMiddleware.normalizeUserLists,
       async input => await listMiddleware.findListByTerm(
         input,
@@ -56,7 +56,7 @@ module.exports = {
     route: '/add_user_typed',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
       async input => await userMiddleware.defineUserFromTyped(
         input,
         messages.mateNotFound(input.message.text),

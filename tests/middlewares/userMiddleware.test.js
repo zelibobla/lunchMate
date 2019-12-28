@@ -15,12 +15,6 @@ describe(`UserMiddleware`, () => {
         expect(error.message).toBe(errorMessage);
       }
     });
-    test(`Should not throw UserInputError if no user found, but no message passed`, async () => {
-      db.get = jest.fn().mockReturnValue(Promise.resolve(undefined));
-      const input = { message: { from: { username: 'qweqwewe' } } };
-      const output = await middleware.defineUser(input);
-      expect(output.user).toBeUndefined();
-    });
     test(`Should find the user`, async () => {
       db.get = jest.fn().mockReturnValue(Promise.resolve({ username: 'user'}));
       const input = { message: { from: { username: 'user' } } };

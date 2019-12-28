@@ -9,8 +9,8 @@ module.exports = {
     }
     const { id } = output.message.from;
     const user = await db.get('id', id, 'users');
-    if (!user && message) {
-      throw new UserInputError(message);
+    if (!user) {
+      throw new UserInputError(message); 
     }
     output.user = user;
     return output;
@@ -32,7 +32,7 @@ module.exports = {
     const output = JSON.parse(JSON.stringify(input));
     const usernameTerm = output.message.text.replace(/^@/, '').toLowerCase();
     const usernameMatch = await db.get('username', usernameTerm, 'users');
-    const phoneTerm = output.message.text.replace(/[^\d]/, '').replace(/^8/, '7');
+    const phoneTerm = output.message.text.replace(/[^\d]/g, '').replace(/^8/, '7');
     const phoneMatch = await db.get('phone', phoneTerm, 'users');
     output.mate = usernameMatch || phoneMatch;
     if (!output.mate) {

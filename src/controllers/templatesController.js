@@ -223,7 +223,7 @@ module.exports = {
     route: '/show_templates',
     pipe: [
       chatMiddleware.defineChatId,
-      userMiddleware.defineUser,
+      async input => await userMiddleware.defineUser(input, messages.registerFirst),
       async input => await templateMiddleware.ifNoTemplates(input, messages.noTemplates),
       async input => await chatMiddleware.sendMessage(input.chatId, messages.showTemplates(input.user.templates)),
     ],

@@ -8,7 +8,7 @@ module.exports = {
     route: '/start',
     pipe: [
       chatMiddleware.defineChatId,
-      input => userMiddleware.ifBot(input, messages.startFromBot),
+      async input => await userMiddleware.ifBot(input, messages.startFromBot),
       async input => {
         const output = JSON.parse(JSON.stringify(input));
         const user = output.message.from;
